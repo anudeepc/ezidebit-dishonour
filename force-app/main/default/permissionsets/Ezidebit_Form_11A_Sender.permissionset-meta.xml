@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<PermissionSet xmlns="http://soap.sforce.com/2006/04/metadata">
+    <classAccesses>
+        <apexClass>Form11AConsoleController</apexClass>
+        <enabled>true</enabled>
+    </classAccesses>
+    <description>Opens the CAP console Form 11A page and sends Direct Debit Default Notices. Assign together with Ezidebit Dishonour Access.</description>
+    <hasActivationRequired>false</hasActivationRequired>
+    <label>Ezidebit Form 11A Sender</label>
+    <pageAccesses>
+        <apexPage>AdminProcessForm11A</apexPage>
+        <enabled>true</enabled>
+    </pageAccesses>
+</PermissionSet>

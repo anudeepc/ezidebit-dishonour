@@ -1,0 +1,167 @@
+<apex:page controller="Form11AConsoleController" showHeader="false" standardstylesheets="false" action="{!load}">
+
+<apex:stylesheet value="{!URLFOR($Resource.Bootstrap, 'bootstrap-4.3.1-dist/css/bootstrap.min.css')}"/>
+<apex:stylesheet value="https://fonts.googleapis.com/icon?family=Material+Icons"/>
+<apex:includeScript value="{!$Resource.JQuery}"/>
+<apex:includeScript value="{!URLFOR($Resource.Bootstrap, 'bootstrap-4.3.1-dist/js/bootstrap.bundle.min.js')}"/>
+
+<title>Admin Process - Form 11A</title>
+
+<style>
+a:hover { cursor:pointer; }
+tr.urgency-amber td { background-color:#fff3cd; }
+tr.urgency-red td { background-color:#f8d7da; }
+.days-red { color:#a71d2a; font-weight:bold; }
+.days-amber { color:#856404; font-weight:bold; }
+.blocked { color:#6c757d; font-size:12px; }
+.legend span { display:inline-block; padding:2px 8px; margin-right:6px; border-radius:3px; font-size:12px; }
+</style>
+
+<apex:form id="form">
+
+<apex:actionStatus id="sendStatus">
+<apex:facet name="start">
+<div style="position:fixed;top:0;left:0;right:0;bottom:0;z-index:1000;background-color:white;">&nbsp;</div>
+<div style="position:fixed;top:0;left:0;right:0;bottom:0;z-index:1001;">
+    <center><img src="{!$Resource.loadingNew}"/></center>
+    <center><p style="font-size:30px;">Sending Direct Debit Default Notices</p></center>
+</div>
+</apex:facet>
+</apex:actionStatus>
+
+<div class="container-fluid">
+<nav class="navbar navbar-expand-lg navbar-light bg-light">
+  <a class="navbar-brand" href=""><apex:image value="{!$Resource.R4KCAPIcon}" width="30" height="30" styleclass="d-inline-block align-top"/> R4K CAP</a>
+  <div class="collapse navbar-collapse show">
+    <ul class="navbar-nav ml-auto w-100 justify-content-end">
+      <li class="nav-item" style="padding-left:5px;padding-right:5px;border-bottom: 5px solid green;">
+        <a onclick="window.open('/apex/AdminProcessUploadPaymentFile?ccCAP={!ccCAP}','_self');" class="btn btn-light btn-sm">Payment Files</a>
+      </li>
+      <li class="nav-item" style="padding-left:5px;padding-right:5px;border-bottom: 5px solid green;">
+        <a onclick="window.open('/apex/AdminProcessRedFlags?ccCAP={!ccCAP}','_self');" class="btn btn-light btn-sm">Red Flags</a>
+      </li>
+      <li class="nav-item" style="padding-left:5px;padding-right:5px;border-bottom: 5px solid green;">
+        <a onclick="window.open('/apex/AdminProcessDishonours?ccCAP={!ccCAP}','_self');" class="btn btn-light btn-sm">Dishonours</a>
+      </li>
+      <li class="nav-item active" style="padding-left:5px;padding-right:5px;border-bottom: 5px solid green;">
+        <a onclick="window.open('/apex/AdminProcessForm11A?ccCAP={!ccCAP}','_self');" class="btn btn-light btn-sm active">Form 11A</a>
+      </li>
+      <li class="nav-item" style="padding-left:5px;padding-right:5px;">
+        <a onclick="window.open('/apex/AdminProcessArrearsLetters?ccCAP={!ccCAP}','_self');" class="btn btn-light btn-sm">Arrears Letters</a>
+      </li>
+      <li class="nav-item" style="padding-left:5px;padding-right:5px;">
+        <a onclick="window.open('/apex/AdminProcessCustomerStatements?ccCAP={!ccCAP}','_self');" class="btn btn-light btn-sm">Customer Statements</a>
+      </li>
+    </ul>
+  </div>
+</nav>
+
+<div style="margin-top:20px;">
+    <h5>Direct Debit Default Notices due (Form 11A)</h5>
+    <p style="font-size:13px;margin-bottom:6px;">
+        First direct debit failures recorded from Ezidebit. The notice must be given within 14 days of the debit date (NCC s87).
+        Oldest first.
+    </p>
+    <div class="legend" style="margin-bottom:10px;">
+        <span style="background:#fff3cd;">Day 7-9 since the debit</span>
+        <span style="background:#f8d7da;">Day 10+ since the debit</span>
+        <span class="badge badge-secondary">{!rows.size} due</span>
+        <span class="badge badge-danger">{!redCount} day 10+</span>
+        <span class="badge badge-warning">{!amberCount} day 7-9</span>
+        <apex:outputPanel rendered="{!overdueCount > 0}"><span class="badge badge-dark">{!overdueCount} past the 14 days</span></apex:outputPanel>
+        <apex:outputPanel rendered="{!reconciledCount > 0}"><span class="badge badge-light">{!reconciledCount} already sent from Dishonours, recorded</span></apex:outputPanel>
+    </div>
+</div>
+
+<apex:pageMessages id="messages"/>
+
+<!-- Review step -->
+<apex:outputPanel rendered="{!reviewing}" id="reviewPanel">
+<div class="card" style="margin-bottom:20px;">
+<div class="card-body">
+    <h6 class="card-title">Review before sending: {!reviewRows.size} notice(s)</h6>
+    <p style="font-size:13px;">Each customer gets the Direct Debit Default Notice PDF by email. Where there is no email address the notice comes to you to print and post.
+       The PDF is saved on the agreement and MP1 is stamped with today's date.</p>
+    <table class="table table-sm" style="font-size:13px;">
+    <thead class="thead-light"><tr><th>Dishonour</th><th>Agreement</th><th>Customer</th><th>Debit date</th><th>Due by</th><th>Sends by</th></tr></thead>
+    <tbody>
+    <apex:repeat value="{!reviewRows}" var="r">
+    <tr>
+        <td>{!r.d.Name}</td>
+        <td>{!r.d.Opportunity__r.Contract_No__c}</td>
+        <td>{!r.d.Opportunity__r.Account.Name}</td>
+        <td><apex:outputField value="{!r.d.Debit_Date__c}"/></td>
+        <td><apex:outputField value="{!r.d.Form_11A_Due_Date__c}"/></td>
+        <td>{!IF(ISBLANK(r.d.Opportunity__r.Account.PersonEmail), 'Copy to you to post', r.d.Opportunity__r.Account.PersonEmail)}</td>
+    </tr>
+    </apex:repeat>
+    </tbody>
+    </table>
+    <apex:commandButton styleClass="btn btn-danger" value="Send {!reviewRows.size} notice(s) now" action="{!send}" status="sendStatus" rerender="form"/>
+    &nbsp;
+    <apex:commandButton styleClass="btn btn-light" value="Back" action="{!cancelReview}" rerender="form"/>
+</div>
+</div>
+</apex:outputPanel>
+
+<!-- Due list -->
+<apex:outputPanel rendered="{!!reviewing}">
+<div style="margin-bottom:10px;">
+    <apex:commandButton styleClass="btn btn-secondary" value="Review and send" action="{!review}" rerender="form"/>
+    <span style="font-size:12px;margin-left:10px;">Up to {!maxPerSend} per send.</span>
+</div>
+<apex:outputPanel rendered="{!rows.size == 0}">
+    <div class="alert alert-success">No Direct Debit Default Notices are due.</div>
+</apex:outputPanel>
+<apex:outputPanel rendered="{!rows.size > 0}">
+<table class="table table-sm" style="font-size:13px;">
+<thead class="thead-light">
+<tr>
+    <th><input type="checkbox" onclick="jQuery('.rowcheck:enabled').prop('checked', this.checked);" style="width:20px;height:20px;"/></th>
+    <th>Due by</th>
+    <th>Days left</th>
+    <th>Debit date</th>
+    <th>Agreement</th>
+    <th>Customer</th>
+    <th>Territory</th>
+    <th>Failure</th>
+    <th>Amount</th>
+    <th>Recovered?</th>
+    <th>Sends by</th>
+</tr>
+</thead>
+<tbody>
+<apex:repeat value="{!rows}" var="r">
+<tr class="urgency-{!r.urgency}">
+    <td>
+        <apex:inputCheckbox value="{!r.selected}" styleClass="rowcheck" disabled="{!!r.canSend}" style="width:20px;height:20px;"/>
+    </td>
+    <td><apex:outputField value="{!r.d.Form_11A_Due_Date__c}"/></td>
+    <td class="{!IF(r.urgency == 'red', 'days-red', IF(r.urgency == 'amber', 'days-amber', ''))}">
+        {!IF(r.daysLeft < 0, TEXT(0 - r.daysLeft) + ' days overdue', TEXT(r.daysLeft))}
+        <div class="blocked">day {!r.daysSinceDebit}</div>
+    </td>
+    <td><apex:outputField value="{!r.d.Debit_Date__c}"/></td>
+    <td><a href="/{!r.d.Opportunity__c}" target="_blank">{!r.d.Opportunity__r.Contract_No__c}</a><div class="blocked"><a href="/{!r.d.Id}" target="_blank">{!r.d.Name}</a></div></td>
+    <td>
+        {!r.d.Opportunity__r.Account.Name}
+        <apex:outputPanel rendered="{!r.d.Opportunity__r.Account.Is_IDR__c}"><span class="badge badge-info">IDR</span></apex:outputPanel>
+    </td>
+    <td>{!r.d.Territory_Name__c}</td>
+    <td>{!r.d.Type__c}<div class="blocked">{!r.d.Bank_Failed_Reason__c}</div></td>
+    <td><apex:outputField value="{!r.d.Payment_Amount__c}"/></td>
+    <td>{!r.d.Outcome__c}</td>
+    <td>
+        <apex:outputPanel rendered="{!r.canSend}">{!r.channel}</apex:outputPanel>
+        <apex:outputPanel rendered="{!!r.canSend}" styleClass="blocked">Can't send: {!r.blockReason}</apex:outputPanel>
+    </td>
+</tr>
+</apex:repeat>
+</tbody>
+</table>
+</apex:outputPanel>
+</apex:outputPanel>
+
+</div>
+</apex:form>
+</apex:page>

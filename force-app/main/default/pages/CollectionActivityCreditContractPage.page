@@ -1,0 +1,1761 @@
+<apex:page standardController="Collection_Activity__c" standardstylesheets="false" sidebar="false" showHeader="false" extensions="CollectionsConsoleCreditContract" action="{!initializeConsole}">
+
+<!-- CSS files-->
+<apex:stylesheet value="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"/>
+<apex:stylesheet value="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.12.1/jquery-ui.css"/>
+<!-- End of CSS files-->
+
+<!-- JS files -->
+<apex:includeScript value="https://code.jquery.com/jquery-3.3.1.js"/>
+<apex:includeScript value="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.12.1/jquery-ui.js"/>
+<apex:includeScript value="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js"/>
+<apex:includeScript value="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"/>
+<apex:includeScript value="https://www.gstatic.com/charts/loader.js"/>
+<!-- End of JS files -->
+
+<title>{!Collection_Activity__c.Name}</title>
+
+<style>
+
+.chart {
+  width: 100%; 
+  min-height: 450px;
+}
+.row {
+  margin:0 !important;
+}
+
+.container-fluid
+{
+    margin-left: 0px;
+    margin-right: 0px;
+    padding-left: 0px;
+    padding-right: 0px;
+}
+
+</style>
+
+<apex:form >
+
+<apex:messages />
+
+<div class="container-fluid">
+
+<!-- CA Header -->
+
+<nav class="navbar navbar-expand-lg navbar-light bg-info text-white sticky-top">
+<div class="collapse navbar-collapse" id="navbarNavDropdown">
+    <ul class="navbar-nav ml-auto w-100 justify-content-center">
+        <li class="nav-item w-25 pt-2 pb-2">
+           <a style="color:white;" href="/{!currentCollectionActivity.Id}" target="_blank"><strong>{!currentCollectionActivity.Name}</strong></a>
+        </li>
+        <li class="nav-item w-50  pt-2 pb-2">
+           <a style="color:white;" href="/{!opportunity.Id}" target="_blank"><strong>{!opportunity.Name}</strong></a>
+        </li>
+        <li class="nav-item w-25  pt-2 pb-2">
+           <a><strong>{!opportunity.Contract_No__c}</strong></a>
+        </li>
+        <li class="nav-item w-25  pt-2 pb-2">
+           <a><strong>{!opportunity.Account.Centrepay_Ref_No__c}</strong></a>
+        </li>
+        <li class="nav-item w-25  pt-2 pb-2">
+           <strong><a  style="color:white;" href="tel:+{!opportunity.Account.SMS_Mobile__c}">{!opportunity.Account.SMS_Mobile__c}</a></strong>
+        </li>
+        <li class="nav-item w-25  pt-2 pb-2">
+           <a><strong>{!currentCollectionActivity.Activity_Type__c}</strong></a>
+        </li>
+        <li class="nav-item w-25  pt-2 pb-2">
+           <apex:outputText rendered="{!opportunity.Account.Is_IDR__c}"><strong>IDR</strong></apex:outputText>
+        </li>
+        <li class="nav-item w-25  pt-2 pb-2">
+           <a><strong>{!LEFT(currentCollectionActivity.Next_Step__c,20)}</strong></a>
+        </li>
+    </ul>
+</div>
+</nav>
+
+
+<!-- CA Header --> 
+
+<div class="row mt-2" style="font-size:14px;">
+
+<!-- Left Div -->
+<div class="col-7">
+
+<div class="row">
+
+<table class="table table-sm text-center" id="applicantTable1">
+    <tbody>
+        <tr>
+            <td>Loan Amount</td>
+            <td>TAV</td>
+            <td>Total Paid</td>
+        </tr>
+        <tr>
+            <td class="h5"><apex:outputText value="{0,number,currency}"><apex:param value="{!Opportunity.Total_Loan_Amount__c}"/></apex:outputText></td>
+            <td class="h5"><apex:outputText value="{0,number,currency}"><apex:param value="{!Opportunity.Amount}"/></apex:outputText></td>
+            <td class="h5"><apex:outputText value="{0,number,currency}"><apex:param value="{!Opportunity.Total_Paid_Amount__c}"/></apex:outputText></td>
+        </tr>
+        <tr>
+            <td>Total Paid Prinicipal Amount</td>
+            <td>Total Loan Balance Amount</td>
+            <td>Total Loan Amount Incl Unpaid Interest</td>
+        </tr>
+        <tr>
+            <td class="h5"><apex:outputText value="{0,number,currency}"><apex:param value="{!Opportunity.Total_Paid_Principal_Amount__c}"/></apex:outputText></td>
+            <td class="h5"><apex:outputText value="{0,number,currency}"><apex:param value="{!Opportunity.Total_Loan_Balance_Amount__c}"/></apex:outputText></td>
+            <td class="h5"><apex:outputText value="{0,number,currency}"><apex:param value="{!Opportunity.Total_Loan_Amount_Incl_Unpaid_Interest__c}"/></apex:outputText></td>
+        </tr>
+        <tr>
+            <td>Rem. Amount</td>
+            <td>Sched. Amount</td>
+            <td>Payment Frequency</td>
+        </tr>
+        <tr>
+            <td class="h5"><apex:outputText value="{0,number,currency}"><apex:param value="{!Opportunity.Remaining_Amount__c}"/></apex:outputText></td>
+            <td class="h5"><apex:outputText value="{0,number,currency}"><apex:param value="{!Opportunity.Scheduled_Amount__c}"/></apex:outputText></td>
+            <td class="h5">{!Opportunity.Payment_Frequency__c}</td>
+        </tr>      
+    </tbody>
+</table>
+
+<table class="table table-sm text-center" id="applicantTable2" style="background-color: #dfe0e0;">
+    <tbody>
+        <tr>
+            <td>Arrears Original</td>
+            <td>Actual Arrears</td>
+            <td>Missed Days</td>
+        </tr>
+        <tr>
+            <td class="h5"><apex:outputText value="{0,number,currency}" style="color:{!IF(Opportunity.Actual_Arrears_Original__c > 0,'#D81E05','green')}"><apex:param value="{!Opportunity.Actual_Arrears_Original__c}"/></apex:outputText></td>
+            <td class="h5"><apex:outputText value="{0,number,currency}" style="color:{!IF(Opportunity.Actual_Arrears__c > 0,'#D81E05','green')}"><apex:param value="{!Opportunity.Actual_Arrears__c}"/></apex:outputText></td>
+            <td class="h5"><apex:outputText value="{!IF(Opportunity.Days_Since_Expected_Payment__c > 0, Opportunity.Days_Since_Expected_Payment__c, 0)}" style="color:{!IF(Opportunity.Days_Since_Expected_Payment__c > 0, '#D81E05', 'green')}"/></td>
+        </tr>
+        <tr>
+            <td>Late Fee</td>
+            <td>Site Visit</td>
+            <td>Termination</td>
+        </tr>
+        <tr>
+            <td class="h5"><apex:outputText value="{0,number,currency}" style="color:{!IF(lateFees > 0,'#D81E05','green')}"><apex:param value="{!lateFees}"/></apex:outputText></td>
+            <td class="h5"><apex:outputText value="{0,number,currency}" style="color:{!IF(siteVisitFees > 0,'#D81E05','green')}"><apex:param value="{!siteVisitFees}"/></apex:outputText></td>
+            <td class="h5"><apex:outputText value="{0,number,currency}" style="color:{!IF(terminationFees > 0,'#D81E05','green')}"><apex:param value="{!terminationFees}"/></apex:outputText></td>
+        </tr>      
+    </tbody>
+</table>
+
+</div>  
+
+<apex:outputPanel rendered="{!IF(opportunity.Account.WrittenOff_s_Count__c > 0, true, false)}">
+<div class="row">
+
+<table class="table table-sm text-center bg-danger text-white applicantTable3">
+    <tbody>
+        <tr>
+            <td># Written Offs</td>
+            <td>TAV</td>
+            <td>Total Paid</td>
+            <td>Rem. Amount</td>
+            <td>Arrears Original</td>
+            <td>Actual Arrears</td>
+        </tr>
+        <tr>
+            <td class="h5">{!opportunity.Account.WrittenOff_s_Count__c}</td>
+            <td class="h5"><apex:outputText value="{0,number,currency}"><apex:param value="{!tavWrittenOff}"/></apex:outputText></td>
+            <td class="h5"><apex:outputText value="{0,number,currency}"><apex:param value="{!totalPaidWrittenOff}"/></apex:outputText></td>
+            <td class="h5"><apex:outputText value="{0,number,currency}"><apex:param value="{!remainingAmountWrittenOff}"/></apex:outputText></td>
+            <td class="h5"><apex:outputText value="{0,number,currency}"><apex:param value="{!actualArrearsOriginalWrittenOff}"/></apex:outputText></td>
+            <td class="h5"><apex:outputText value="{0,number,currency}"><apex:param value="{!actualArrearsWrittenOff}"/></apex:outputText></td>
+        </tr>           
+    </tbody>
+</table>
+
+</div>    
+</apex:outputPanel>
+
+<div class="row">
+
+<div class="col-12" id="paymentsDiv">
+     <div id="chart_div_payment"></div>
+    
+</div>
+
+</div>
+
+<hr/>
+
+<!--
+<div class="row">
+
+<div class="col-12">
+    <div id="chart_div_appStatus"></div>
+</div>
+
+</div>
+-->
+
+<div class="row mt-1">
+
+<div class="btn-toolbar" role="toolbar" aria-label="Toolbar with button groups" style="margin-bottom:10px;">
+  <div class="btn-group" style="margin: 5px;" role="group" aria-label="Second group">
+    <button class="btn btn-sm btn-info" type="button" data-toggle="collapse" data-target="#agreementsRelatedList" aria-expanded="false" aria-controls="collapseExample" onclick="scrollToBottom();">
+    Agreements
+    </button>
+  </div>
+  <div class="btn-group" style="margin: 5px;" role="group" aria-label="Second group">
+    <button class="btn btn-sm btn-info" type="button" data-toggle="collapse" data-target="#attachmentsRelatedList" aria-expanded="false" aria-controls="collapseExample" onclick="scrollToBottom();">
+    Attachments
+    </button>
+  </div>
+  <!--
+  <div class="btn-group" style="margin: 5px;" role="group" aria-label="Second group">
+    <button class="btn btn-info" type="button" data-toggle="collapse" data-target="#notesRelatedList" aria-expanded="false" aria-controls="collapseExample">
+    Notes
+    </button>
+  </div>
+  <div class="btn-group" style="margin: 5px;" role="group" aria-label="Third group">
+    <button class="btn btn-sm btn-info" type="button" data-toggle="collapse" data-target="#tasksRelatedList" aria-expanded="false" aria-controls="collapseExample">
+    Tasks
+    </button>
+  </div>
+  -->
+  <div class="btn-group" style="margin: 5px;" role="group" aria-label="Third group">
+    <button class="btn btn-sm btn-info" type="button" data-toggle="collapse" data-target="#alertsRelatedList" aria-expanded="false" aria-controls="collapseExample" onclick="scrollToBottom();">
+    Alerts
+    </button>
+  </div>
+  <div class="btn-group" style="margin: 5px;" role="group" aria-label="Second group">
+    <button class="btn btn-sm btn-info" type="button" data-toggle="collapse" data-target="#coiRelatedList" aria-expanded="false" aria-controls="collapseExample" onclick="scrollToBottom();">
+    COI
+    </button>
+  </div>
+  <!--<div class="btn-group" style="margin: 5px;" role="group" aria-label="Second group">
+    <button class="btn btn-info" type="button" data-toggle="collapse" data-target="#arrangementRelatedList" aria-expanded="false" aria-controls="collapseExample">
+    Arrangement
+    </button>
+  </div>-->
+  <div class="btn-group" style="margin: 5px;" role="group" aria-label="Second group">
+    <button class="btn btn-sm btn-info" type="button" data-toggle="collapse" data-target="#historyRelatedList" aria-expanded="false" aria-controls="collapseExample" onclick="scrollToBottom();">
+    Applicant History
+    </button>
+    </div>
+  <div class="btn-group" style="margin: 5px;" role="group" aria-label="Second group">
+    <button class="btn btn-sm btn-info" type="button" data-toggle="collapse" data-target="#smsRelatedList" aria-expanded="false" aria-controls="collapseExample" onclick="scrollToBottom();">
+    SMS History
+    </button>
+  </div> 
+  <div class="btn-group" style="margin: 5px;" role="group" aria-label="Second group">
+    <button class="btn btn-sm btn-info" type="button" data-toggle="collapse" data-target="#paymentsRelatedList" aria-expanded="false" aria-controls="collapseExample" onclick="scrollToBottom();">
+    Payments
+    </button>
+  </div>
+  <div class="btn-group" style="margin: 5px;" role="group" aria-label="Second group">
+    <button class="btn btn-sm btn-info" type="button" data-toggle="collapse" data-target="#otherOpenCAsRelatedList" aria-expanded="false" aria-controls="collapseExample" onclick="scrollToBottom();">
+    Other Open CAs
+    </button>
+  </div> 
+  <!--
+  <div class="btn-group" style="margin: 5px;" role="group" aria-label="Second group">
+    <button class="btn btn-sm btn-info" type="button" data-toggle="collapse" data-target="#statusRelatedList" aria-expanded="false" aria-controls="collapseExample" onclick="scrollToBottom();">
+    Status
+    </button>
+  </div> 
+  -->
+</div>
+
+</div>
+
+
+</div>
+<!-- Left Div-->
+
+<!-- Right Div -->
+<div class="col-5">
+
+<div style="width:auto;height:300px;display:none;" id="map"></div>
+<div style="width:auto;height:100px;display:none;" id="noLocation">
+<apex:outputPanel rendered="{!IF(shortLinkOpenedDatetime!=null && shortLinkOpenedDatetime!='',true,false)}">
+<b>Location access not provided by the customer</b><br/>
+<b>Date Opened:</b> {!shortLinkOpenedDatetime} <br/> 
+<b>Payment:</b> {!collectionActivity.Payment_Status__c} <br/>
+<span style="display:{!IF(CONTAINS(collectedDeviceName,'null'),'none;','')}" ><b>Device Name:</b> {!collectedDeviceName}</span>
+</apex:outputPanel>
+<apex:outputPanel rendered="{!IF(shortLinkOpenedDatetime!=null && shortLinkOpenedDatetime!='',false,true)}">
+<b>Short Link has not been opened yet</b>
+</apex:outputPanel>
+</div>
+
+<div class="btn-group d-flex mt-1 mb-1" role="group" aria-label="Basic example">
+  <a class="btn btn-sm btn-primary text-white w-100" data-toggle="modal" data-target="#actionModal">Action</a>
+  <a class="btn btn-sm btn-primary text-white w-100" data-toggle="modal" data-target="#smsModal" onclick="updateSMSText('SMS');">SMS</a>
+  <a class="btn btn-sm btn-primary text-white w-100" data-toggle="modal" data-target="#emailModal">Email</a>
+  <a class="btn btn-sm btn-primary text-white w-100" data-toggle="modal" data-target="#feesModal">Fees</a>
+  <a class="btn btn-sm btn-primary text-white w-100" data-toggle="modal" data-target="#fieldModal" onclick="initFieldVisit();">Field Visit</a>
+  <a class="btn btn-sm btn-primary text-white w-100" data-toggle="modal" data-target="#arrangementModal">Arrangement</a>
+</div>
+
+<div class="mt-1 mb-1">
+<table class="table table-sm">
+    <tbody>
+        <tr>
+            <td width="30%"><strong>Payment Link</strong></td>
+            <td width="70%"><a href="{!collectionActivity.Short_Link__c}" target="_blank">{!collectionActivity.Short_Link__c}</a></td>
+        </tr>
+        <tr>
+            <td><strong>Payment Status</strong></td>
+            <td>{!collectionActivity.Payment_Status__c}</td>
+        </tr>
+        <tr>
+            <td><strong>DOB</strong></td>
+            <td><apex:outputText value="{0,date,dd/MM/yyyy}"><apex:param value="{!opportunity.Account.Birthdate__c}"/></apex:outputText></td>
+        </tr>
+        <tr>
+            <td><strong>Address</strong></td>
+            <td>{!opportunity.Account.UnformattedAddress_VedaAlert_Report__c}</td>
+        </tr>
+    </tbody>
+</table>
+</div>
+<div style="max-height:550px;overflow:auto;">
+<table class="table table-sm">
+    <thead class="bg-secondary text-center text-white">
+        <th colspan="6">Notes</th>
+    </thead>
+    <tbody style="background-color: #F2F3F4;">
+        <apex:repeat value="{!allNotes}" var="ca">
+            <tr>
+                <td colspan="1" class="bg-light" style="font-weight:bold;"><apex:outputText value="{0,date,dd/MM/yyyy}"><apex:param value="{!ca.dateToCompare}"/></apex:outputText></td>
+                <td colspan="4" class="bg-light" style="font-weight:bold;">{!ca.title}</td>
+                <td colspan="1" class="bg-light" style="font-weight:bold;"><a href="/{!ca.obj.Id}" target="_blank">{!ca.type}</a></td>
+            </tr>
+            <tr>
+                <td colspan="6"><apex:outputText value="{!ca.description}" escape="false" rendered="{!IF(AND(ca.description != null, ca.description != ''), true, false)}"/></td>
+            </tr>    
+        </apex:repeat>    
+    </tbody>
+</table>
+</div>
+
+</div>
+
+<!-- End of Right Div-->
+
+</div>
+<!-- End of first row -->
+
+
+<div class="row mt-1" style="font-size:14px;">
+
+
+<div id="relatedListSection" class="col-12 accordion" style="margin-bottom:10px;">
+
+<div class="collapse" id="agreementsRelatedList" data-parent="#relatedListSection">
+    <div class="card card-body" style="height:400px;overflow:auto;">
+        <table class="table table-sm">
+            <thead class="bg-secondary text-center text-white">
+                <th colspan="14">Agreements</th>
+            </thead>
+            <tbody>
+               <tr style="font-weight:bold;">
+                <td>Name</td>
+                <td>Applicant 2</td>
+                <td>Stage</td>
+                <td>TAV</td>
+                <td>Total Paid</td>
+                <td>Rem. Amount</td>
+                <td>Sched. Amount</td>
+                <td>Frequency</td>
+                <td>Arrears</td>
+                <td>Fee Date</td>
+                <td>Fee</td>
+                <td>Rem. Payments</td>
+                <td>Open CA</td>
+                <td>Created</td>
+                </tr>
+                <apex:repeat value="{!activeOpportunities}" var="opp">
+                    <tr>
+                        <td><a href="/{!opp.Id}" target="_blank">{!opp.Name}</a></td>
+                        <td><a href="/{!opp.Applicant2__c}" target="_blank">{!opp.Applicant2__r.Name}</a></td>
+                        <td>{!opp.StageName}</td>
+                        <td><apex:outputText value="{0,number,currency}"><apex:param value="{!opp.Amount}"/></apex:outputText></td>
+                        <td><apex:outputText value="{0,number,currency}"><apex:param value="{!opp.Total_Paid_Amount__c}"/></apex:outputText></td>
+                        <td><apex:outputText value="{0,number,currency}"><apex:param value="{!opp.Remaining_Amount__c}"/></apex:outputText></td>
+                        <td><apex:outputText value="{0,number,currency}"><apex:param value="{!opp.Scheduled_Amount__c}"/></apex:outputText></td>
+                        <td>{!opp.Payment_Frequency__c}</td>
+                        <td><apex:outputText value="{0,number,currency}"><apex:param value="{!opp.Actual_Arrears__c}"/></apex:outputText></td>
+                        <td><apex:outputText value="{0,date,dd/MM/yyyy}"><apex:param value="{!opp.Missed_Payment_Charged_Date__c}"/></apex:outputText></td>
+                        <td><apex:outputText value="{0,number,currency}"><apex:param value="{!opp.Fee_Amount__c}"/></apex:outputText></td>
+                        <td>{!opp.No_of_Remaining_Payments_to_be_Made__c}</td>
+                        <td><a href="/apex/CollectionActivityAgreementPage?id={!opp.Last_Collection_Activity__c}" target="_blank">{!opp.Last_Collection_Activity__r.Name}</a></td>
+                        <td><apex:outputText value="{0,date,dd/MM/yyyy}"><apex:param value="{!opp.CreatedDate}"/></apex:outputText></td>
+                    </tr>    
+                </apex:repeat>
+            </tbody>
+        </table> 
+    </div>
+</div>
+
+<div class="collapse" id="historyRelatedList" data-parent="#relatedListSection">
+    <div class="card card-body" style="height:400px;overflow:auto;">
+        <table class="table table-sm">
+            <thead class="bg-secondary text-center text-white">
+                <th colspan="4">Contact Info</th>
+            </thead>
+            <tbody>
+               <tr style="font-weight:bold;">
+                    <td>Field</td>
+                    <td>Old Value</td>
+                    <td>New Value</td>
+                    <td>Changed On</td>
+                </tr>
+                <apex:repeat value="{!accountHistoryWrappers}" var="ref">
+                    <tr>
+                        <td>{!IF(ref.acctHistory.Field = 'PersonEmail', 'Email', IF(ref.acctHistory.field = 'PersonMobilePhone', 'Mobile', IF(ref.acctHistory.field = 'PersonMailingStreet', 'Street', IF(ref.acctHistory.field = 'PersonMailingCity', 'City',IF(ref.acctHistory.field = 'PersonMailingState', 'State', IF(ref.acctHistory.field = 'PersonMailingPostalCode', 'Postcode',''))))))}</td>
+                        <td>{!ref.acctHistory.OldValue}</td>
+                        <td>{!ref.acctHistory.NewValue}</td>
+                        <td><apex:outputText value="{0,date,dd/MM/yyyy}"><apex:param value="{!ref.modifiedDate}"/></apex:outputText></td>
+                    </tr>    
+                </apex:repeat>
+            </tbody>
+        </table>
+    </div>
+</div>
+<div class="collapse" id="attachmentsRelatedList" data-parent="#relatedListSection">
+    <div class="card card-body" style="height:400px;overflow:auto;">
+        <table class="table table-sm">
+            <thead class="bg-secondary text-center text-white">
+                <th colspan="4">Attachments</th>
+            </thead>
+            <tbody>
+               <tr style="font-weight:bold;">
+                    <td>Name</td>
+                    <td>Created</td>
+                </tr>
+                <apex:repeat value="{!selectedApplicantAttachments}" var="wrap">
+                    <tr>
+                        <td><a href="/{!wrap.Id}" target="_blank">{!wrap.Name}</a></td>
+                        <td><apex:outputText value="{0,date,dd/MM/yyyy}"><apex:param value="{!wrap.createdDate}"/></apex:outputText></td>
+                    </tr>    
+                </apex:repeat>
+            </tbody>
+        </table>
+    </div>
+</div>
+<div class="collapse" id="smsRelatedList" data-parent="#relatedListSection">
+    <div class="card card-body" style="height:400px;overflow:auto;">
+        <table class="table table-sm">
+            <thead class="bg-secondary text-center text-white">
+                <th colspan="4">Last 6 SMS</th>
+            </thead>
+            <tbody>
+               <tr style="font-weight:bold;">
+                    <td>SMS Text</td>
+                    <td>Mobile</td>
+                    <td>Status</td>
+                    <td>Date</td>
+                </tr>
+                <apex:repeat value="{!selectedApplicantSMSHistory}" var="wrap">
+                    <tr>
+                        <td>{!wrap.smagicinteract__SMSText__c}</td>
+                        <td>{!wrap.smagicinteract__PhoneNumber__c}</td>
+                        <td>{!wrap.smagicinteract__deliveryStatus__c}</td>
+                        <!--<td>{!IF(wrap.Account__c != null, wrap.Account__r.Name, IF(wrap.Opportunity__c != null, wrap.Opportunity__r.Name, '') )}</td>-->
+                        <td><apex:outputText value="{0,date,dd/MM/yyyy}"><apex:param value="{!wrap.CreatedDate}"/></apex:outputText></td>
+                    </tr>    
+                </apex:repeat>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="collapse" id="paymentsRelatedList" data-parent="#relatedListSection">
+    <div class="card card-body" style="height:400px;overflow:auto;">
+        <table class="table table-sm">
+            <thead class="bg-secondary text-center text-white">
+                <th colspan="4">Payments</th>
+            </thead>
+            <tbody>
+               <tr style="font-weight:bold;">
+                    <td>Payment</td>
+                    <td>Amount</td>
+                    <th>Type</th>
+                    <td>Uploaded</td>
+                </tr>
+                <apex:repeat value="{!applicantPastPayments}" var="wrap">
+                    <tr>
+                        <td><a href="/{!wrap.Id}" target="_blank">{!wrap.Name}</a></td>
+                        <td><apex:outputText value="{0,number,currency}"><apex:param value="{!wrap.Total_Paid__c}"/></apex:outputText></td>
+                        <td>{!wrap.RecordType.Name}</td>
+                        <td><apex:outputText value="{0,date,dd/MM/yyyy}"><apex:param value="{!wrap.CreatedDate}"/></apex:outputText></td>
+                    </tr>    
+                </apex:repeat>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="collapse" id="otherOpenCAsRelatedList" data-parent="#relatedListSection">
+    <div class="card card-body" style="height:400px;overflow:auto;">
+        <table class="table table-sm">
+            <thead class="bg-secondary text-center text-white">
+                <th colspan="4">Agreement Collection Activities</th>
+            </thead>
+            <tbody>
+               <tr style="font-weight:bold;">
+                    <td>CA Name</td>
+                    <td>CA Status</td>
+                    <th>Agreement</th>
+                    <td>CA Created</td>
+                </tr>
+                <apex:repeat value="{!otherOpenCAs}" var="ca">
+                    <apex:outputPanel rendered="{!IF(ca.Agreement__c != null,true,false)}">
+                        <tr>
+                            <td><a href="/apex/CollectionActivityAgreementPage?id={!ca.Id}" target="_blank">{!ca.Name}</a></td>
+                            <td>{!ca.Collection_Outcome1__c}</td>
+                            <td><a href="/{!ca.Agreement__c}" target="_blank">{!ca.Agreement__r.Name}</a></td>
+                            <td><apex:outputText value="{0,date,dd/MM/yyyy}"><apex:param value="{!ca.CreatedDate}"/></apex:outputText></td>
+                        </tr>    
+                    </apex:outputPanel>
+                </apex:repeat>
+            </tbody>
+        </table>
+        <table class="table table-sm mt-4">
+            <thead class="bg-secondary text-center text-white">
+                <th colspan="4">Applicant Collection Activities</th>
+            </thead>
+            <tbody>
+               <tr style="font-weight:bold;">
+                    <td>CA Name</td>
+                    <td>CA Status</td>
+                    <th>Applicant</th>
+                    <td>CA Created</td>
+                </tr>
+                <apex:repeat value="{!otherOpenCAs}" var="ca">
+                    <apex:outputPanel rendered="{!IF(ca.Agreement__c = null,true,false)}">
+                        <tr>
+                            <td><a href="/apex/CollectionActivityPage?id={!ca.Id}" target="_blank">{!ca.Name}</a></td>
+                            <td>{!ca.Collection_Outcome1__c}</td>
+                            <td><a href="/{!ca.Applicant__c}" target="_blank">{!ca.Applicant__r.Name}</a></td>
+                            <td><apex:outputText value="{0,date,dd/MM/yyyy}"><apex:param value="{!ca.CreatedDate}"/></apex:outputText></td>
+                        </tr>    
+                    </apex:outputPanel>
+                </apex:repeat>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!--
+<div class="collapse" id="statusRelatedList" data-parent="#relatedListSection">
+    <div class="card card-body" style="height:400px;overflow:auto;">
+        <table class="table table-sm">
+            <thead class="bg-secondary text-center text-white">
+                <th colspan="4">Applicant Status</th>
+            </thead>
+            <tbody>
+               <tr style="font-weight:bold;">
+                    <td>Code</td>
+                    <td>Amount</td>
+                    <th>Effective</th>
+                    <td>Created</td>
+                </tr>
+                <apex:repeat value="{!applicantStatuses}" var="wrap">
+                    <tr>
+                        <td><a href="/{!wrap.Id}" target="_blank">{!wrap.Activation_Code__c}</a></td>
+                        <td><apex:outputText value="{0,number,currency}"><apex:param value="{!wrap.Scheduled_Amount__c}"/></apex:outputText></td>
+                        <td><apex:outputText value="{0,date,dd/MM/yyyy}"><apex:param value="{!wrap.Effective_Date__c}"/></apex:outputText></td>
+                        <td><apex:outputText value="{0,date,dd/MM/yyyy}"><apex:param value="{!wrap.CreatedDate}"/></apex:outputText></td>
+                    </tr>    
+                </apex:repeat>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="collapse" id="caRelatedList" data-parent="#relatedListSection">
+    <div class="card card-body" style="height:400px;overflow:auto;">
+        <table class="table table-sm">
+            <thead class="bg-secondary text-center text-white">
+                <th colspan="6">Past Collection Activities</th>
+            </thead>
+            <tbody>
+                <tr style="font-weight:bold;">
+                    <td>Name</td>
+                    <td>Type</td>
+                    <td>Notes</td>
+                    <td>Outcome</td>
+                    <td>Activity By</td>
+                    <td>Created</td>
+                </tr>
+                <apex:repeat value="{!pastCollectionActivities}" var="ca">
+                    <tr>
+                        <td><a href="/{!ca.Id}" target="_blank">{!ca.Name}</a></td>
+                        <td>{!ca.Activity_Type__c}</td>
+                        <td><apex:outputText value="{!ca.Collection_Notes__c}" escape="false"/></td>
+                        <td>{!ca.Collection_Outcome1__c}</td>
+                        <td>{!ca.Activity_By__c}</td>
+                        <td><apex:outputText value="{0,date,dd/MM/yyyy}"><apex:param value="{!ca.CreatedDate}"/></apex:outputText></td>
+                    </tr>    
+                </apex:repeat>
+            </tbody>
+        </table>
+    </div>
+</div>
+<div class="collapse" id="notesRelatedList" data-parent="#relatedListSection">
+    <div class="card card-body" style="height:400px;overflow:auto;">
+        <table class="table table-sm">
+            <thead class="bg-secondary text-center text-white">
+                <th colspan="3">Notes</th>
+            </thead>
+            <tbody>
+                <tr style="font-weight:bold;">
+                    <td>Name</td>
+                    <td>Content</td>
+                    <td>Created</td>
+                </tr>
+                <apex:repeat value="{!pastContentNotes}" var="ca">
+                    <tr>
+                        <td><a href="/{!ca.Id}" target="_blank">{!ca.Title}</a></td>
+                        <td>{!ca.TextPreview}</td>
+                        <td><apex:outputText value="{0,date,dd/MM/yyyy}"><apex:param value="{!ca.CreatedDate}"/></apex:outputText></td>
+                    </tr>    
+                </apex:repeat>
+            </tbody>
+        </table>
+    </div>
+</div>
+<div class="collapse" id="tasksRelatedList" data-parent="#relatedListSection">
+    <div class="card card-body" style="height:400px;overflow:auto;">
+        <table class="table table-sm">
+            <thead class="bg-secondary text-center text-white">
+                <th colspan="5">Tasks</th>
+            </thead>
+            <tbody>
+                <tr style="font-weight:bold;">
+                    <td>Subject</td>
+                    <td>Description</td>
+                    <td>Status</td>
+                    <td>Priority</td>
+                    <td>Created</td>
+                </tr>
+                <apex:repeat value="{!pastTasks}" var="ca">
+                    <tr>
+                        <td><a href="/{!ca.Id}" target="_blank">{!ca.Subject}</a></td>
+                        <td>{!ca.Description}</td>
+                        <td>{!ca.Status}</td>
+                        <td>{!ca.Priority}</td>
+                        <td><apex:outputText value="{0,date,dd/MM/yyyy}"><apex:param value="{!ca.CreatedDate}"/></apex:outputText></td>
+                    </tr>    
+                </apex:repeat>
+            </tbody>
+        </table> 
+    </div>
+</div>
+-->
+<div class="collapse" id="alertsRelatedList" data-parent="#relatedListSection">
+    <div class="card card-body" style="height:400px;overflow:auto;">
+        <table class="table table-sm">
+            <thead class="bg-secondary text-center text-white">
+                <th colspan="5">Address Alerts</th>
+            </thead>
+            <tbody>
+                <tr style="font-weight:bold;">
+                    <td>Name</td>
+                    <td>New Address</td>
+                    <td>Old Address</td>
+                    <td>Created</td>
+                </tr>
+                <apex:repeat value="{!equifaxAlertsAddress}" var="alert">
+                    <tr>
+                        <td><a href="/{!alert.Id}" target="_blank">{!alert.Name}</a></td>
+                        <td>{!alert.Address_Change__c}</td>
+                        <td>{!alert.Applicant__r.UnformattedAddress_VedaAlert_Report__c}</td>
+                        <td><apex:outputText value="{0,date,dd/MM/yyyy}"><apex:param value="{!alert.CreatedDate}"/></apex:outputText></td>
+                    </tr>    
+                </apex:repeat>
+            </tbody>
+        </table> 
+        
+        <table class="table table-sm">
+            <thead class="bg-secondary text-center text-white">
+                <th colspan="5">Bankruptcy Alerts</th>
+            </thead>
+            <tbody>
+                <tr style="font-weight:bold;">
+                    <td>Name</td>
+                    <td>Bankruptcy Reference</td>
+                    <td>Bankruptcy Type</td>
+                    <td>Created</td>
+                </tr>
+                <apex:repeat value="{!equifaxAlertsBankruptcy}" var="alert">
+                    <tr>
+                        <td><a href="/{!alert.Id}" target="_blank">{!alert.Name}</a></td>
+                        <td>{!alert.Bankruptcy_Reference__c}</td>
+                        <td>{!alert.Bankruptcy_Type__c}</td>
+                        <td><apex:outputText value="{0,date,dd/MM/yyyy}"><apex:param value="{!alert.CreatedDate}"/></apex:outputText></td>
+                    </tr>    
+                </apex:repeat>
+            </tbody>
+        </table> 
+        
+        <table class="table table-sm">
+            <thead class="bg-secondary text-center text-white">
+                <th colspan="6">Default Alerts</th>
+            </thead>
+            <tbody>
+                <tr style="font-weight:bold;">
+                    <td>Name</td>
+                    <td>Default Amount</td>
+                    <td>Credit Provider</td>
+                    <td>Default Status</td>
+                    <td>Default Type</td>
+                    <td>Created</td>
+                </tr>
+                <apex:repeat value="{!equifaxAlertsDefault}" var="alert">
+                    <tr>
+                        <td><a href="/{!alert.Id}" target="_blank">{!alert.Name}</a></td>
+                        <td><apex:outputText value="{0,number,currency}"><apex:param value="{!alert.Default_Latest_Amount__c}"/></apex:outputText></td>
+                        <td>{!alert.Default_Latest_Credit_Provider__c}</td>
+                        <td>{!alert.Default_Status__c}</td>
+                        <td>{!alert.Default_Type__c}</td>
+                        <td><apex:outputText value="{0,date,dd/MM/yyyy}"><apex:param value="{!alert.CreatedDate}"/></apex:outputText></td>
+                    </tr>    
+                </apex:repeat>
+            </tbody>
+        </table> 
+        
+        <table class="table table-sm">
+            <thead class="bg-secondary text-center text-white">
+                <th colspan="5">Employment Alerts</th>
+            </thead>
+            <tbody>
+                <tr style="font-weight:bold;">
+                    <td>Name</td>
+                    <td>Old Employer</td>
+                    <td>New Employer</td>
+                    <td>Created</td>
+                </tr>
+                <apex:repeat value="{!equifaxAlertsEmployment}" var="alert">
+                    <tr>
+                        <td><a href="/{!alert.Id}" target="_blank">{!alert.Name}</a></td>
+                        <td>{!alert.Applicant__r.Employer_Name__c}</td>
+                        <td>{!alert.Employment_Updated_Employer__c}</td>
+                        <td><apex:outputText value="{0,date,dd/MM/yyyy}"><apex:param value="{!alert.CreatedDate}"/></apex:outputText></td>
+                    </tr>    
+                </apex:repeat>
+            </tbody>
+        </table>
+        
+        <table class="table table-sm">
+            <thead class="bg-secondary text-center text-white">
+                <th colspan="5">Enquiry Alerts</th>
+            </thead>
+            <tbody>
+                <tr style="font-weight:bold;">
+                    <td>Name</td>
+                    <td>Credit Enquiry Type</td>
+                    <td>Credit Enquiry Enquirer</td>
+                    <td>Created</td>
+                </tr>
+                <apex:repeat value="{!equifaxAlertsEnquiry}" var="alert">
+                    <tr>
+                        <td><a href="/{!alert.Id}" target="_blank">{!alert.Name}</a></td>
+                        <td>{!alert.Credit_Enquiry_Account_Type__c}</td>
+                        <td>{!alert.Credit_Enquiry_Enquirer__c}</td>
+                        <td><apex:outputText value="{0,date,dd/MM/yyyy}"><apex:param value="{!alert.CreatedDate}"/></apex:outputText></td>
+                    </tr>    
+                </apex:repeat>
+            </tbody>
+        </table> 
+    </div>
+</div>
+
+<div class="collapse" id="coiRelatedList" data-parent="#relatedListSection">
+    <div class="card card-body" style="height:400px;overflow:auto;">
+        <table class="table table-sm">
+            <thead class="bg-secondary text-center text-white">
+                <th colspan="5">Referred By</th>
+            </thead>
+            <tbody>
+                <tr style="font-weight:bold;">
+                    <td>Name</td>
+                    <td style="text-align:center;">Active Agreements</td>
+                    <td>Arrears</td>
+                    <td>Mobile</td>
+                    <td>Address</td>
+                </tr>
+                <apex:repeat value="{!referringApplicantWrapper}" var="wrap">
+                    <tr>
+                        <td><a href="/{!wrap.acct.Id}" target="_blank">{!wrap.acct.Name}</a></td>
+                        <td style="text-align:center;">{!wrap.acct.Active_Agreements__c}</td>
+                        <td><apex:outputText value="{0,number,currency}"><apex:param value="{!wrap.acct.Actual_Arrears__c}"/></apex:outputText></td>
+                        <td><a href="tel:+{!wrap.mobileNumber}">{!wrap.acct.PersonMobilePhone}</a></td>
+                        <td>{!wrap.acct.PersonMailingStreet} {!wrap.acct.PersonMailingCity} {!wrap.acct.PersonMailingState} {!wrap.acct.PersonMailingCountry} {!wrap.acct.PersonMailingPostalCode}</td>
+                    </tr>    
+                </apex:repeat>
+            </tbody>
+        </table>
+        
+        <table class="table table-sm">
+            <thead class="bg-secondary text-center text-white">
+                <th colspan="5">Referred</th>
+            </thead>
+            <tbody>
+                <tr style="font-weight:bold;">
+                    <td>Name</td>
+                    <td style="text-align:center;">Active Agreements</td>
+                    <td>Arrears</td>
+                    <td>Mobile</td>
+                    <td>Address</td>
+                </tr>
+                <apex:repeat value="{!referredApplicantWrappers}" var="wrap">
+                    <tr>
+                        <td><a href="/{!wrap.acct.Id}" target="_blank">{!wrap.acct.Name}</a></td>
+                        <td style="text-align:center;">{!wrap.acct.Active_Agreements__c}</td>
+                        <td><apex:outputText value="{0,number,currency}"><apex:param value="{!wrap.acct.Actual_Arrears__c}"/></apex:outputText></td>
+                        <td><a href="tel:+{!wrap.mobileNumber}">{!wrap.acct.PersonMobilePhone}</a></td>
+                        <td>{!wrap.acct.PersonMailingStreet} {!wrap.acct.PersonMailingCity} {!wrap.acct.PersonMailingState} {!wrap.acct.PersonMailingCountry} {!wrap.acct.PersonMailingPostalCode}</td>
+                    </tr>    
+                </apex:repeat>
+            </tbody>
+        </table>
+        
+        <table class="table table-sm">
+            <thead class="bg-secondary text-center text-white">
+                <th colspan="9">Referees</th>
+            </thead>
+            <tbody>
+               <tr style="font-weight:bold;">
+                <td>Name</td>
+                <td>Relationship</td>
+                <td>Contacted On</td>
+                <td># This Week</td>
+                <td># Last Week</td>
+                <td>Email</td>
+                <td>Mobile</td>
+                <td>Address</td>
+                <td>Edit</td>
+                </tr>
+                <apex:repeat value="{!refereeWrapperList}" var="wrap">
+                    <tr>
+                        <td><a href="/{!wrap.referee.Id}" target="_blank">{!wrap.referee.Referee_Name__r.Name}</a></td>
+                        <td>{!wrap.referee.Relationship__c}</td>
+                        <td><apex:outputText value="{0,date,dd/MM/yyyy}"><apex:param value="{!wrap.referee.Contacted_On_Date__c}"/></apex:outputText></td>
+                        <td style="text-align:center;">{!wrap.timesContactedThisWeek}</td>
+                        <td style="text-align:center;">{!wrap.timesContactedLastWeek}</td>
+                        <td><a href="mailto:+{!wrap.referee.Email__c}">{!wrap.referee.Email__c}</a></td>
+                        <td><a href="tel:+{!wrap.referee.Phone__c}">{!wrap.referee.Phone__c}</a></td>
+                        <td>{!wrap.referee.Street__c} {!wrap.referee.City__c} {!wrap.referee.State__c} {!wrap.referee.Postcode__c}</td>
+                        <td><apex:image value="{!$Resource.ExpensesEditIcon}" width="30px" height="30px" onclick="editReferee(this);"/></td>
+                    </tr>    
+                </apex:repeat>
+            </tbody>
+        </table>      
+    </div>
+</div>
+
+</div>
+
+    
+</div>
+
+
+<div class="modal fade bd-example-modal-lg" tabindex="-1" role="dialog" aria-labelledby="myLargeModalLabel" aria-hidden="true" id="feesModal" data-backdrop="static" data-keyboard="false">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content" style="padding:10px;font-size:14px;">
+            <table class="table table-sm">
+                <thead class="bg-secondary text-center text-white">
+                    <th colspan="7">Active Agreements</th>
+                </thead>
+                <tbody>
+                   <tr style="font-weight:bold;">
+                    <td>Name</td>
+                    <td>TAV</td>
+                    <td>Rem. Amount</td>
+                    <td>Arrears</td>
+                    <td>Fee Charged</td>
+                    <td>Fee Amount</td>
+                    <td>Action</td>
+                    </tr>
+                    <apex:outputPanel rendered="{!IF(opportunity.StageName = 'Goods Delivered', true, false)}">
+                        <tr>
+                            <td><a href="/{!opportunity.Id}" target="_blank">{!opportunity.Name}</a></td>
+                            <td><apex:outputText value="{0,number,currency}"><apex:param value="{!opportunity.Amount}"/></apex:outputText></td>
+                            <td><apex:outputText value="{0,number,currency}"><apex:param value="{!opportunity.Remaining_Amount__c}"/></apex:outputText></td>
+                            <td><apex:outputText value="{0,number,currency}"><apex:param value="{!opportunity.Actual_Arrears__c}"/></apex:outputText></td>
+                            <td><apex:outputText value="{0,date,dd/MM/yyyy}"><apex:param value="{!opportunity.Missed_Payment_Charged_Date__c}"/></apex:outputText></td>
+                            <td><apex:outputText value="{0,number,currency}"><apex:param value="{!opportunity.Fee_Amount__c}"/></apex:outputText></td>
+                            <td>
+                                <apex:outputText rendered="{!IF(OR(DATEVALUE(opportunity.CreatedDate) < DATE(2017,4,4), opportunity.StageName <> 'Goods Delivered'), true, false)}">
+                                    Cannot Charge Fees
+                                </apex:outputText>
+                                <apex:outputPanel rendered="{!IF(AND(DATEVALUE(opportunity.CreatedDate) > DATE(2017,4,4), opportunity.StageName = 'Goods Delivered'), true, false)}">
+                                    <a href="/apex/ManageFeesPage?scontrolCaching=1&id={!opportunity.Id}" target="_blank" class="btn btn-sm btn-danger text-white">Charge / Waive Fees</a>
+                                </apex:outputPanel>
+                            </td>
+                        </tr>
+                    </apex:outputPanel>    
+                </tbody>
+            </table>
+            <apex:commandButton rendered="{!IF($CurrentPage.Parameters.showfees='true',true,false)}" styleclass="btn btn-block btn-secondary btn-sm text-white" action="{!returnToCollectionActivity}" value="Close"/>
+            <a style="display:{!IF($CurrentPage.Parameters.showfees='true','none','')};" class="btn btn-block btn-secondary btn-sm text-white" onclick="closeFeesModal();">Close</a> 
+        </div>
+    </div>
+</div>
+
+
+<div class="modal fade bd-example-modal-lg" tabindex="-1" role="dialog" aria-labelledby="myLargeModalLabel" aria-hidden="true" id="fieldModal">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content" style="padding:10px;font-size:14px;">
+            <table class="table table-sm">
+                <thead class="bg-secondary text-center text-white">
+                    <th colspan="2">Field Visit</th>
+                </thead>
+                <tbody>
+                    <tr><td>Dropped Arrears Flyer</td><td><apex:inputCheckbox value="{!droppedArrearsFlyer}"/></td></tr>
+                    <tr><td>Field Visit Address</td><td><textArea rows="4" disabled="true" class="form-control fieldVisitTextArea"/></td></tr>
+                    <tr style="display:none;"><td>Field Visit Address</td><td><apex:inputTextArea value="{!fieldVisitAddress}" styleclass="form-control fieldVisitAddress"/></td></tr><tr><td>Field Visit Notes</td><td><apex:inputTextArea value="{!fieldVisitNotes}" styleclass="form-control"/></td></tr>
+                    <tr><td>Field Representative Surname</td><td><apex:inputText styleClass="repName form-control" value="{!fieldRepSurname}"/></td></tr>
+                    <tr><td colspan="2"><apex:commandButton value="Save" action="{!addFieldVisit}" styleClass="btn btn-sm btn-primary btn-block" onClick="return validateFieldVisit();"/></td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+
+<div class="modal fade bd-example-modal-lg" tabindex="-1" role="dialog" aria-labelledby="myLargeModalLabel" aria-hidden="true" id="smsModal">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content" style="padding:10px;font-size:14px;">      
+            <table class="table table-sm">
+                <tbody>
+                    <tr><td width="40%"><strong>{!Collection_Activity__c.Applicant__r.Name}</strong></td><td width="60%"></td></tr>
+                    <tr class="smsrow"><td width="40%">Mobile</td><td width="60%"><apex:inputText value="{!mobileNumber}"/></td></tr>
+                    <tr><td>Referee Name</td><td><apex:inputText value="{!refereeName}"/></td></tr>
+                    <tr class="smsrow">
+                        <td>SMS Type</td>
+                        <td>
+                            <apex:selectList size="1" multiselect="false" value="{!smsTemplateType}" onchange="updateSMSText('SMS');" styleClass="smsType">
+                                <apex:selectOptions value="{!smsOptions}"/> 
+                            </apex:selectList>
+                        </td>
+                    </tr>
+                    <tr class="smsrow">
+                        <td>SMS Text</td>
+                        <td>
+                            <p class="ausSMSText1" style="display:none;">
+                                {!softTemplateForCust}  
+                            </p>
+                            <p class="ausSMSText2" style="display:none;">
+                                {!mediumTemplateForCust}  
+                            </p>
+                            <p class="ausSMSText3" style="display:none;">
+                                {!firmTemplateForCust}  
+                            </p>
+                            <p class="nzSMSText1" style="display:none;">
+                                Hi {!Collection_Activity__c.Applicant__r.FirstName}, unfortunately your Rent4keeps payment of ${!Collection_Activity__c.Applicant__r.Schedule_Amount__c} has been missed! Easily catch up on your payment at {!Collection_Activity__c.Short_Link__c} or call one of our friendly staff on {!opportunity.Account.Territory_Number__r.Collection_Number__c}
+                            </p>
+                            <p class="nzSMSText2" style="display:none;">
+                                Hi {!Collection_Activity__c.Applicant__r.FirstName}, Urgent payment needed for ${!Collection_Activity__c.Applicant__r.Schedule_Amount__c} that was due on &nbsp;<apex:outputText value="{0,date,dd/MM/yyyy}"><apex:param value="{!TODAY()}"/></apex:outputText>, to avoid further action against you pay now at {!Collection_Activity__c.Short_Link__c} or call one of our friendly staff on {!opportunity.Account.Territory_Number__r.Collection_Number__c} to resolve immediately!
+                            </p>
+                            <p class="nzSMSText3" style="display:none;">
+                                Hi {!Collection_Activity__c.Applicant__r.FirstName}, your Rent4keeps payment of ${!Collection_Activity__c.Applicant__r.Schedule_Amount__c} is seriously overdue and needs to be paid ASAP. Avoid a Repossession Warning Notice by calling today on {!opportunity.Account.Territory_Number__r.Collection_Number__c} to talk with us about your payment options or pay now at {!Collection_Activity__c.Short_Link__c}
+                            </p>
+                        </td>
+                    </tr>
+                    <tr class="smsrow">
+                        <td colspan="2">
+                            <apex:commandButton value="Send SMS" action="{!actionCollectionActivitySMS}" styleClass="btn btn-sm btn-primary btn-block" rendered="{!!opportunity.Account.Is_IDR__c}"/>
+                            <apex:outputPanel rendered="{!opportunity.Account.Is_IDR__c}">
+                                <p class="bg-danger text-white font-weight-bold p-4">
+                                    Cannot send sms as this customer is in IDR.
+                                </p>
+                            </apex:outputPanel>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade bd-example-modal-lg" tabindex="-1" role="dialog" aria-labelledby="myLargeModalLabel" aria-hidden="true" id="emailModal">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content" style="padding:10px;font-size:14px;">      
+            <table class="table table-sm">
+                <tbody>
+                    <tr><td width="40%"><strong>{!Collection_Activity__c.Applicant__r.Name}</strong></td><td width="60%"></td></tr>
+                    <tr class="emailrow"><td width="40%">Email</td><td width="60%"><apex:inputText value="{!email}"/></td></tr>
+                    <tr><td>Referee Name</td><td><apex:inputText value="{!refereeName}"/></td></tr>
+                    <tr class="emailrow">
+                        <td>Email Type</td>
+                        <td>
+                            <apex:selectList size="1" multiselect="false" value="{!emailTemplateType}" onchange="updateSMSText('Email');" styleClass="emailType">
+                                <apex:selectOptions value="{!emailOptions}"/>
+                            </apex:selectList>
+                        </td>
+                    </tr>
+                    <tr class="emailrow">
+                        <td>Email Text</td>
+                        <td>
+                            <p class="emailText1" style="display:none;">
+                              {!softTemplateForCust}  
+                            </p>
+                            <p class="emailText2" style="display:none;">
+                              {!mediumTemplateForCust}  
+                            </p>
+                            <p class="emailText3" style="display:none;">
+                              {!firmTemplateForCust}  
+                            </p>
+                        </td>
+                    </tr>
+                    <tr class="emailrow">
+                        <td colspan="2">
+                            <apex:commandButton value="Send Email" action="{!actionCollectionActivityEmail}" styleClass="btn btn-sm btn-primary btn-block" rendered="{!!opportunity.Account.Is_IDR__c}"/>
+                            <apex:outputPanel rendered="{!opportunity.Account.Is_IDR__c}">
+                                <p class="bg-danger text-white font-weight-bold p-4">
+                                    Cannot send email as this customer is in IDR.
+                                </p>
+                            </apex:outputPanel>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade bd-example-modal-lg" tabindex="-1" role="dialog" aria-labelledby="myLargeModalLabel" aria-hidden="true" id="actionModal">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content" style="padding:10px;font-size:14px;">      
+            <table class="table table-sm">
+                <tbody>
+                    <tr><td width="40%"><strong>{!Collection_Activity__c.Applicant__r.Name}</strong></td><td width="60%"></td></tr>
+                    <tr>
+                        <td>Assigned To</td>
+                        <td>
+                            <apex:selectList size="1" value="{!assignedTo}">
+                                <apex:selectOptions value="{!userOptions}"/>    
+                            </apex:selectList>
+                        </td>
+                    </tr>
+                    <apex:outputPanel rendered="{!IF(collectionActivity.Company_Territory__c, false, true)}">
+                        <tr><td>Collection Officer</td><td><apex:inputText styleClass="collectionOfficer" value="{!collectionOfficer}"/></td></tr>
+                    </apex:outputPanel>
+                    <apex:outputPanel rendered="{!IF(collectionActivity.Company_Territory__c, true, false)}">
+                        <tr>
+                            <td>Collection Officer</td>
+                            <td>
+                                <apex:selectList value="{!collectionEmployee}" size="1" styleClass="collectionEmployee">
+                                    <apex:selectOptions value="{!collectionEmployeeOptions}"></apex:selectOptions>
+                                </apex:selectList>
+                            </td>
+                        </tr>
+                    </apex:outputPanel>
+                    <tr>
+                        <td>Collection Reason Category</td>
+                        <td>
+                            <apex:selectList styleClass="collectionReasonCategory" value="{!collectionReasonCategory}" size="1" multiselect="false">
+                                <apex:selectOptions value="{!collectionReasonCategoryOptions}"/>
+                                <apex:actionSupport action="{!getDependentCollectionReasons}" event="onchange" reRender="collectionReason">
+                                </apex:actionSupport>
+                            </apex:selectList>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Collection Reason</td>
+                        <td>
+                            <apex:selectList styleClass="collectionReason" value="{!collectionReason}" size="1" multiselect="false" id="collectionReason">
+                                <apex:selectOptions value="{!collectionReasonOptions}"/>
+                            </apex:selectList>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Call Status</td>
+                        <td>
+                            <apex:selectList size="1" multiselect="false" styleClass="" value="{!callStatus}">
+                               <apex:selectOption itemValue="None" itemLabel="None"/>
+                               <apex:selectOption itemValue="Contacted" itemLabel="Contacted"/>
+                               <apex:selectOption itemValue="Disconnected" itemLabel="Disconnected"/>
+                               <apex:selectOption itemValue="Mailbox Full" itemLabel="Mailbox Full"/>
+                               <apex:selectOption itemValue="No Answer" itemLabel="No Answer"/>
+                               <apex:selectOption itemValue="Left Message" itemLabel="Left Message"/>
+                               <apex:selectOption itemValue="Call Failed" itemLabel="Call Failed"/>
+                            </apex:selectList>
+                        </td>
+                    </tr>
+                    <tr><td>Remind Me On</td><td><apex:inputText styleClass="remindMeOn" value="{!remindMeOn}" onclick="$(this).datepicker({ dateFormat: 'dd/mm/yy' });$(this).datepicker('show');"/></td></tr>
+                    <tr><td>Contacted Customer On</td><td><apex:inputText styleClass="customerContactedDateTime" value="{!customerContactedDateTime}" onclick="$(this).datepicker({ dateFormat: 'dd/mm/yy' });$(this).datepicker('show');"/></td></tr>
+                    <tr><td>Referees Contacted</td><td><apex:inputCheckbox value="{!refereesContacted}"/></td></tr>
+                    <tr><td>Expected Collection Date</td><td><apex:inputText value="{!expectedCollectionDate}" onclick="$(this).datepicker({ dateFormat: 'dd/mm/yy' });$(this).datepicker('show');"/></td></tr>
+                    <tr><td>Next Step</td><td><apex:inputTextArea value="{!nextStep}" styleclass="form-control" html-placeholder="limit 50 characters"/></td></tr>
+                    <tr>
+                        <td>Reason For Success</td>
+                        <td>
+                            <apex:selectList size="1" multiselect="false" styleClass="" value="{!reasonForSuccess}">
+                               <apex:selectOption itemValue="None" itemLabel="None"/>
+                               <apex:selectOption itemValue="Circle Of Influence" itemLabel="Circle Of Influence"/>
+                               <apex:selectOption itemValue="Direct Contact" itemLabel="Direct Contact"/>
+                               <apex:selectOption itemValue="SMS" itemLabel="SMS"/>
+                               <apex:selectOption itemValue="Email" itemLabel="Email"/>
+                               <apex:selectOption itemValue="Repetitive Calls" itemLabel="Repetitive Calls"/>
+                            </apex:selectList>
+                        </td>
+                    </tr>
+                    <tr><td>Manual Success</td><td><apex:inputCheckbox value="{!makeSuccessManually}" styleClass="manualSuccess" onchange="toggleReasonSuccessManual(this);"/></td></tr>
+                    <tr style="display:none;" class="paymentAmountRow"><td>Payment Amount</td><td><apex:inputText value="{!paymentAmount}" styleclass="form-control paymentAmount"/></td></tr>
+                    <tr style="display:none;" class="paymentTypeRow">
+                        <td>Payment Type</td>
+                        <td>
+                            <apex:selectList size="1" multiselect="false" styleClass="paymentType" value="{!paymentType}">
+                               <apex:selectOption itemValue="None" itemLabel="None"/>
+                               <apex:selectOption itemValue="Cash" itemLabel="Cash"/>
+                               <apex:selectOption itemValue="Centrepay" itemLabel="Centrepay"/>
+                               <apex:selectOption itemValue="Ezidebit" itemLabel="Ezidebit"/>
+                            </apex:selectList>
+                        </td>
+                    </tr>
+                    <tr style="display:none;" class="reasonSuccessManuallyRow"><td>Reason For Manual Success</td><td><apex:inputTextArea value="{!reasonSuccessManually}" styleclass="form-control reasonSuccessManually"/></td></tr>
+                    <tr><td colspan="2"><apex:inputTextArea value="{!collectionNotes}" richText="true"/></td></tr>
+                    <tr><td colspan="2"><apex:commandButton value="Save" action="{!updateCollectionActivity}" styleClass="btn btn-sm btn-primary btn-block" onclick="return validateManualSuccess();"/></td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+
+<div class="modal fade bd-example-modal-lg" tabindex="-1" role="dialog" aria-labelledby="myLargeModalLabel" aria-hidden="true" id="arrangementModal">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content" style="padding:10px;font-size:14px;">      
+            <table class="table table-sm">
+            <thead class="bg-secondary text-center text-white">
+                <th colspan="4">Arrangement</th>
+            </thead>
+            <tbody> 
+            <tr><td style="vertical-align:middle;">Is This An Arrangement?</td><td style="vertical-align:middle;"><apex:inputCheckBox value="{!isThisSTA}" styleClass="isThisSTA"/></td></tr>
+            <tr><td style="vertical-align:middle;">STA Scheduled Amount</td><td style="vertical-align:middle;"><apex:inputText value="{!staAmount}" styleClass="staAmount"/></td></tr>
+            <tr><td style="vertical-align:middle;">STA Next Due Date</td><td style="vertical-align:middle;"><apex:inputText value="{!staDueDate}" styleClass="staDueDate" html-placeholder="dd/mm/yyyy" onclick="$('.staDueDate').datepicker({ dateFormat: 'dd/mm/yy' });$('.staDueDate').datepicker('show');"/></td></tr>
+            <tr><td style="vertical-align:middle;">STA End Date</td><td style="vertical-align:middle;"><apex:inputText value="{!staEndDate}" styleClass="staEndDate" html-placeholder="dd/mm/yyyy" onclick="$('.staEndDate').datepicker({ dateFormat: 'dd/mm/yy' });$('.staEndDate').datepicker('show');"/></td></tr>
+            <tr><td style="vertical-align:middle;">Payment Frequency</td><td style="vertical-align:middle;">{!opportunity.Payment_Frequency__c}</td></tr>
+            <tr><td style="vertical-align:middle;">STA Notes</td><td style="vertical-align:middle;"><apex:inputTextArea value="{!staNotes}" styleClass="staNotes form-control"/></td></tr>
+            <tr><td colspan="2"><apex:commandButton value="Save" action="{!updateArrangement}" styleClass="btn btn-sm btn-primary btn-block" onclick="return validateArrangement();"/></td></tr>
+            </tbody>
+        </table>
+        </div>
+    </div>
+</div>
+
+
+<div class="modal fade bd-example-modal-lg" tabindex="-1" role="dialog" aria-labelledby="myLargeModalLabel" aria-hidden="true" id="refereeModal">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content" style="padding:10px;font-size:14px;">
+            <table class="table table-sm">
+                <thead class="bg-secondary text-center text-white">
+                    <th colspan="2">Edit Referee</th>
+                </thead>
+                <tbody>
+                    <tr style="display:none;">
+                        <td>Id</td>
+                        <td><apex:inputText value="{!editRefereeId}" styleClass="editRefereeId"/></td>
+                    </tr>
+                    <tr style="display:none;">
+                        <td>Conatct Id</td>
+                        <td><apex:inputText value="{!editRefereeContactId}" styleClass="editRefereeContactId"/></td>
+                    </tr>
+                    <tr>
+                        <td>Name</td>
+                        <td id="editRefereeName"></td>
+                    </tr>
+                    <tr>
+                        <td>Phone</td>
+                        <td><apex:inputText value="{!editRefereePhone}" styleClass="editRefereePhone form-control"/></td>
+                    </tr>
+                    <tr>
+                        <td>Email</td>
+                        <td><apex:inputText value="{!editRefereeEmail}" styleClass="editRefereeEmail form-control"/></td>
+                    </tr>
+                    <tr>
+                        <td>Contacted</td>
+                        <td>
+                            <apex:selectList value="{!editRefereeContacted}" styleClass="editRefereeContacted" multiselect="false" size="1">
+                                <apex:selectOption itemValue="No" itemLabel="No"/>
+                                <apex:selectOption itemValue="Yes" itemLabel="Yes"/>
+                            </apex:selectList>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Last Contacted On Date</td>
+                        <td><apex:inputText value="{!editRefereeContactedDate}" styleClass="editRefereeContactedDate form-control" onclick="$('.editRefereeContactedDate').datepicker({ dateFormat: 'dd/mm/yy' });$('.editRefereeContactedDate').datepicker('show');" html-placeholder="dd/mm/yyyy"/></td>
+                    </tr>
+                    <!--
+                    <tr>
+                        <td>Contacted On Date Time</td>
+                        <td><apex:inputText value="{!editRefereeContactedDateTime}" styleClass="editRefereeContactedDateTime"/></td>
+                    </tr>
+                    -->
+                    <tr>
+                        <td colspan="2"><apex:commandButton value="Update Referee" action="{!updateReferee}" styleClass="btn btn-block btn-secondary"/></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+
+
+</div>
+
+
+<apex:inputHidden value="{!Collection_Activity__c.Name}"/>
+<apex:inputHidden value="{!Collection_Activity__c.Next_Step__c}"/>
+<apex:inputHidden value="{!Collection_Activity__c.Email_Applicant__c}"/>
+<apex:inputHidden value="{!Collection_Activity__c.Short_Link__c}"/>
+<apex:inputHidden value="{!Collection_Activity__c.Arrears_Amount__c}"/>
+<apex:inputHidden value="{!Collection_Activity__c.Applicant_Address__c}"/>
+<apex:inputHidden value="{!Collection_Activity__c.Activity_Type__c}"/>
+<apex:inputHidden value="{!Collection_Activity__c.Applicant__c}"/>
+<apex:inputHidden value="{!Collection_Activity__c.Applicant__r.Name}"/>
+<apex:inputHidden value="{!Collection_Activity__c.Applicant__r.Customer_No__c}"/>
+<apex:inputHidden value="{!Collection_Activity__c.Applicant__r.Centrepay_Ref_No__c}"/>
+<apex:inputHidden value="{!Collection_Activity__c.Applicant__r.Territory_Number__r.Collection_Number__c}"/>
+<apex:inputHidden value="{!Collection_Activity__c.Applicant__r.PersonMobilePhone}"/>
+<apex:inputHidden value="{!Collection_Activity__c.Applicant__r.SMS_Mobile__c}"/>
+<apex:inputHidden value="{!Collection_Activity__c.Applicant__r.OwnerId}"/>
+<apex:inputHidden value="{!Collection_Activity__c.Applicant__r.FirstName}"/>
+<apex:inputHidden value="{!Collection_Activity__c.Applicant__r.Territory_Number__c}"/>
+<apex:inputHidden value="{!Collection_Activity__c.Applicant__r.Territory_Number__r.Short_Name__c}"/>
+<apex:inputHidden value="{!Collection_Activity__c.Applicant__r.Territory_Number__r.State_Master_State__c}" />
+<apex:inputHidden value="{!Collection_Activity__c.Applicant__r.Territory_Number__r.Collection_Number__c}"/>
+<apex:inputHidden value="{!Collection_Activity__c.Applicant__r.PersonEmail}"/>
+<apex:inputHidden value="{!Collection_Activity__c.Applicant__r.Total_Agreement_Amount_Active_Only__c}"/>
+<apex:inputHidden value="{!Collection_Activity__c.Applicant__r.Total_Paid_Amount_Active_Only__c}"/>
+<apex:inputHidden value="{!Collection_Activity__c.Applicant__r.Remaining_Amount_Active_Agreements__c}"/>
+<apex:inputHidden value="{!Collection_Activity__c.Applicant__r.Schedule_Amount__c}"/>
+<apex:inputHidden value="{!Collection_Activity__c.Applicant__r.Actual_Arrears_after_variation__c}"/>
+<apex:inputHidden value="{!Collection_Activity__c.Applicant__r.Actual_Arrears__c}"/>
+<apex:inputHidden value="{!Collection_Activity__c.Applicant__r.Days_Since_Expected_Payment__c}"/>
+<apex:inputHidden value="{!Collection_Activity__c.Applicant__r.No_Of_Active_Agreements__c}"/>
+<apex:inputHidden value="{!Collection_Activity__c.Applicant__r.No_of_Agreements__c}"/>
+<apex:inputHidden value="{!Collection_Activity__c.Applicant__r.LastPaymentRecieved__c}"/>
+<apex:inputHidden value="{!Collection_Activity__c.Applicant__r.Site_Visit__c}"/>
+<apex:inputHidden value="{!Collection_Activity__c.Applicant__r.Missed_Payment__c}"/>
+<apex:inputHidden value="{!Collection_Activity__c.Applicant__r.Termination__c}"/>
+<apex:inputHidden value="{!Collection_Activity__c.Applicant__r.FirstName}"/>
+<apex:inputHidden value="{!Collection_Activity__c.Applicant__r.Last_SMS_delivery_status__c }"/>
+
+</apex:form> 
+
+
+<script>
+google.charts.load('current', {packages: ['corechart', 'bar']});
+google.charts.setOnLoadCallback(drawBasicPayment);
+//google.charts.setOnLoadCallback(drawBasicAppStatus);
+var map, marker, markerCollected;
+var homeLatLng, collectionLocation, collectionLatLng, deviceName;
+homeLatLng = JSON.parse('{!homeLocation}');
+collectionLocation = '{!collectedDeviceLocation}';
+deviceName = '{!collectedDeviceName}';
+
+function drawBasicPayment() {
+
+    var json = '{!paymentJson}';
+    //alert(json);
+    
+    if(json != 'null' && json != '')
+    {
+        var records = JSON.parse(json);
+        var appScheduledAmount = parseFloat("{!Collection_Activity__c.Applicant__r.Schedule_Amount__c}");
+        const months = ["Jan", "Feb", "Mar","Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+        //alert(appScheduledAmount);
+        
+        var dataTable = new google.visualization.DataTable();
+        dataTable.addColumn('string','Payment Date');
+        dataTable.addColumn('number','Payment Amount');
+        dataTable.addColumn({type:'string', role:'style'});
+        dataTable.addColumn({type:'string', role:'annotation'});
+        dataTable.addColumn('number','Scheduled Amount');
+        dataTable.addColumn({type:'string', role:'style'});
+        dataTable.addColumn({type:'string', role:'annotation'});
+        var dataValue='';
+        
+        for(var i =0; i<records.length;i++)
+        {
+            var payment = records[i];
+            var paymentDate = new Date(payment.CreatedDate);
+            var formatted_PaymentDate = paymentDate.getDate() + "-" + months[paymentDate.getMonth()] + "-" + paymentDate.getFullYear();
+            var paymentAmount = parseFloat(payment.Total_Paid__c);
+            var paymentType = payment.RecordType.Name;
+            var paymentColorIndicator=paymentAmount>=appScheduledAmount ? "#8BCB78": "#FF6384";
+            //alert(paymentDate+" "+paymentAmount+" "+paymentType);
+            
+            dataValue =[];
+            dataValue.push(formatted_PaymentDate);
+            dataValue.push(paymentAmount);
+            dataValue.push(paymentColorIndicator);
+            dataValue.push(paymentType);
+            dataValue.push(appScheduledAmount);
+            dataValue.push("#ADB7C1");
+            
+            if(i < records.length - 1)
+            {
+                var date1 = new Date(records[i].CreatedDate);            
+                var date2 = new Date(records[i+1].CreatedDate);
+                var diffTime = Math.abs(date1.getTime() - date2.getTime());
+                var diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+                dataValue.push(diffDays - 1 + ' days');
+            }else{
+                dataValue.push(0 + ' days');
+            }
+            
+            if(i < 6)
+            {
+                dataTable.addRow(dataValue);
+            }
+        } 
+        
+        var options = {
+        title: 'Last 6 Payment Trend',
+        hAxis: {
+          title: 'Payment Uploaded Date',
+          format: 'dd/MM/YYYY',
+        },
+        vAxis: {
+          title: 'Payment Amount ($)'
+        },
+        legend: { position: "none" },
+        seriesType: 'bars',
+        series: {4: {type: 'line'}},
+        animation: {
+          startup: true,
+          duration: 1500,
+          easing: 'out',
+         }
+        };
+        
+        var chart = new google.visualization.ComboChart(
+        document.getElementById('chart_div_payment'));
+        
+        chart.draw(dataTable, options);
+    }
+}
+
+$(window).resize(function(){
+  drawBasicPayment();
+
+  if(window.innerWidth < 1000)
+  {
+      $('#applicantTable1').css('width','100%');
+      $('#applicantTable2').css('width','100%');
+      $('.applicantTable3').css('width','100%');
+  }else{
+      $('#applicantTable1').css('width','50%');
+      $('#applicantTable2').css('width','50%');
+      $('.applicantTable3').css('width','100%');
+  }
+});
+
+function updateSMSText(type)
+{
+    console.log(type);
+    console.log($('.smsType').val());
+    if(type == 'SMS')
+    {
+        if($('.smsType').val() == 'Soft Touch')
+        {
+            $('.ausSMSText1').css('display','block');
+            $('.ausSMSText2').css('display','none');
+            $('.ausSMSText3').css('display','none');
+            $('.nzSMSText1').css('display','none');
+            $('.nzSMSText2').css('display','none');
+            $('.nzSMSText3').css('display','none');
+        }else if($('.smsType').val() == 'Medium Touch')
+        {
+            $('.ausSMSText1').css('display','none');
+            $('.ausSMSText2').css('display','block');
+            $('.ausSMSText3').css('display','none');
+            $('.nzSMSText1').css('display','none');
+            $('.nzSMSText2').css('display','none');
+            $('.nzSMSText3').css('display','none');
+        }else if($('.smsType').val() == 'Firm Touch')
+        {
+            $('.ausSMSText1').css('display','none');
+            $('.ausSMSText2').css('display','none');
+            $('.ausSMSText3').css('display','block');
+            $('.nzSMSText1').css('display','none');
+            $('.nzSMSText2').css('display','none');
+            $('.nzSMSText3').css('display','none');
+        }else if($('.smsType').val() == 'DAY 3')
+        {
+            $('.ausSMSText1').css('display','none');
+            $('.ausSMSText2').css('display','none');
+            $('.ausSMSText3').css('display','none');
+            $('.nzSMSText1').css('display','none');
+            $('.nzSMSText2').css('display','block');
+            $('.nzSMSText3').css('display','none');
+        }else if($('.smsType').val() == 'DAY 7-29')
+        {
+            $('.ausSMSText1').css('display','none');
+            $('.ausSMSText2').css('display','none');
+            $('.ausSMSText3').css('display','none');
+            $('.nzSMSText1').css('display','none');
+            $('.nzSMSText2').css('display','none');
+            $('.nzSMSText3').css('display','block');
+        }else if($('.smsType').val() == 'DAY 1'){
+            $('.ausSMSText1').css('display','none');
+            $('.ausSMSText2').css('display','none');
+            $('.ausSMSText3').css('display','none');
+            $('.nzSMSText1').css('display','block');
+            $('.nzSMSText2').css('display','none');
+            $('.nzSMSText3').css('display','none');
+        }else{
+            $('.ausSMSText1').css('display','none');
+            $('.ausSMSText2').css('display','none');
+            $('.ausSMSText3').css('display','none');
+            $('.nzSMSText1').css('display','none');
+            $('.nzSMSText2').css('display','none');
+            $('.nzSMSText3').css('display','none');
+        }
+    }else if(type == 'Email')
+    {
+        if($('.emailType').val() == 'Soft Touch')
+        {
+            $('.emailText1').css('display','block');
+            $('.emailText2').css('display','none');
+            $('.emailText3').css('display','none');
+        }else if($('.emailType').val() == 'Medium Touch')
+        {
+            $('.emailText1').css('display','none');
+            $('.emailText2').css('display','block');
+            $('.emailText3').css('display','none');
+        }else if($('.emailType').val() == 'Firm Touch')
+        {
+            $('.emailText1').css('display','none');
+            $('.emailText2').css('display','none');
+            $('.emailText3').css('display','block');
+        }else
+        {
+            $('.emailText1').css('display','none');
+            $('.emailText2').css('display','none');
+            $('.emailText3').css('display','none');
+        }
+    }
+}
+
+function initFieldVisit() 
+{
+    if (navigator.geolocation)
+    {
+        navigator.geolocation.getCurrentPosition(showPosition);
+    }else{
+        alert('Geolocation not supported');
+    }
+}
+
+function showPosition(position) 
+{ 
+    var geocoder = new google.maps.Geocoder;
+    var latlng = {lat: position.coords.latitude, lng: position.coords.longitude};
+    geocoder.geocode({'location': latlng}, function(results, status)
+        {
+            if(status === 'OK')
+            {
+                if(results[0])
+                {
+                    $(".fieldVisitTextArea").val(results[0].formatted_address);
+                    $(".fieldVisitAddress").val(results[0].formatted_address);
+                }else{
+                    window.alert('No address found for the location');
+                }
+            }else{
+                window.alert('Geocoder failed due to: ' + status);
+            }
+        }
+    );
+}
+
+function validateFieldVisit()
+{
+    if($('.repName').val()=='' || $('.repName').val().trim()=='')
+    {
+        alert('Enter Field Representative Surname');
+        return false;
+    }
+}
+
+function scrollToBottom()
+{
+    $("html, body").animate({ scrollTop: 9999 }, 1000);
+}
+
+function toggleReasonSuccessManual(elem)
+{
+    if($(elem).prop('checked'))
+    {
+        $('.reasonSuccessManuallyRow').css('display','');
+        $('.paymentAmountRow').css('display','');
+        $('.paymentTypeRow').css('display','');
+    }else{
+        $('.reasonSuccessManuallyRow').css('display','none');
+        $('.paymentAmountRow').css('display','none');
+        $('.paymentTypeRow').css('display','none');
+    }
+}
+
+function validateManualSuccess()
+{    
+    console.log('****Amount****' + $('.paymentAmount').val());
+    console.log('****Type ' + $('.paymentType').val());
+    
+    if($('.paymentAmount').val() != '' && isNaN($('.paymentAmount').val()))
+    {
+        alert('Payment amount must be numeric');
+        return false;
+    }
+    
+    if($('.paymentAmount').val() != '' && parseFloat($('.paymentAmount').val()) < 0)
+    {
+        alert('Payment amount cannot be less than zero');
+        return false;
+    }
+    
+    if($('.paymentAmount').val() != '' && !isNaN($('.paymentAmount').val()) && (parseFloat($('.paymentAmount').val()) > 0) && ($('.paymentType').val() == '' || $('.paymentType').val() == 'None'))
+    {
+        alert('Please select payment type');
+        return false;
+    }
+    
+    if($('.manualSuccess').prop('checked') && ($('.reasonSuccessManually').val() == '' || $('.reasonSuccessManually').val().trim() == ''))
+    {
+        alert('Please enter reason for manual success!!!');
+        return false;
+    }
+
+    if($('.collectionReasonCategory').val() == '' || $('.collectionReasonCategory').val() == '--None--'){
+        alert('Please select Collection Reason Category');
+        return false;
+    }
+
+    if($('.collectionReason').val() == '' || $('.collectionReason').val() == '--None--'){
+        alert('Please select Collection Reason');
+        return false;
+    }
+}
+
+$(document).ready(
+    function()
+    {
+        if('{!$CurrentPage.Parameters.showfees}' == 'true')
+        {
+            $('#feesModal').modal('show');
+        }
+        
+        if(window.innerWidth < 1000)
+        {
+          $('#applicantTable1').css('width','100%');
+          $('#applicantTable2').css('width','100%');
+          $('.applicantTable3').css('width','100%');
+        }else{
+          $('#applicantTable1').css('width','50%');
+          $('#applicantTable2').css('width','50%');
+          $('.applicantTable3').css('width','100%');
+        }
+        
+        updateSMSText('SMS');
+        updateSMSText('Email');
+    }
+);
+
+function closeFeesModal()
+{
+    $('#feesModal').modal('hide');
+}
+
+function initMap() {
+
+if(collectionLocation!='unavailable')
+{
+    $('#noLocation').css({'display' : 'none'});
+    $('#map').css({'display' : ''});
+    collectionLatLng = JSON.parse('{!collectedDeviceLocation}');
+    map = new google.maps.Map(document.getElementById('map'), {
+      center: homeLatLng,
+      zoom: 12
+    });
+    
+    marker = new google.maps.Marker({
+    map: map,
+    icon: 'http://maps.google.com/mapfiles/kml/pal3/icon48.png',
+    position: homeLatLng
+  });
+  
+  var infoContent = '<div class="card bg-light mb-3"><div class="card-header"><b>Opened Location:</b> '+'{!collectionActivity.Short_Link_Opened_Address__c}'+'<br/>'+
+  '<b>Date Opened:</b> '+'{!shortLinkOpenedDatetime}'+'<br/> <b>Payment:</b> '+ '{!collectionActivity.Payment_Status__c}' +'<br/><b>Device Name:</b> ' +deviceName+'</div></div>';
+  var infoWindow = new google.maps.InfoWindow({
+        content: infoContent
+    });
+  
+  markerCollected = new google.maps.Marker({
+    map: map,
+    icon: 'https://maps.google.com/mapfiles/ms/icons/red-dot.png',
+    position: collectionLatLng
+  });
+  
+  markerCollected.addListener('click', function() {
+    infoWindow.open(map, markerCollected);
+  });
+  
+  var cityCircleInner = new google.maps.Circle({
+    strokeColor: '#00B200',
+    strokeOpacity: 0.8,
+    strokeWeight: 2,
+    fillColor: '#00B200',
+    fillOpacity: 0.35,
+    map: map,
+    center: homeLatLng,
+    radius: 1000
+  });
+  
+  var cityCircleOuter = new google.maps.Circle({
+    strokeColor: '#C9854C',
+    strokeOpacity: 0.8,
+    strokeWeight: 2,
+    fillColor: '#C9854C',
+    fillOpacity: 0.35,
+    map: map,
+    center: homeLatLng,
+    radius: 5000
+  });
+}
+else
+{    
+    //$('#map').css({'height' : '50px', 'font-weight' : 'bold'});
+    //$('#map').text('Location access not provided by the customer');
+    $('#map').css({'display' : 'none'});
+    $('#noLocation').css({'display' : ''});
+}
+}
+
+
+function editReferee(elem)
+{
+    var index = $(elem).closest('tr').index();
+    var refereeData = JSON.parse('{!refereesJSON}');
+    
+    $('.editRefereeId').val('');
+    $('.editRefereeContactId').val('');
+    $('#editRefereeName').html('');
+    $('.editRefereePhone').val('');
+    $('.editRefereeEmail').val('');
+    
+    $('.editRefereeId').val(refereeData[index-1].referee.Id);
+    $('.editRefereeContactId').val(refereeData[index-1].referee.Referee_Name__c);
+    $('#editRefereeName').html(refereeData[index-1].referee.Referee_Name__r.Name);
+    $('.editRefereePhone').val(refereeData[index-1].referee.Referee_Name__r.MobilePhone);
+    $('.editRefereeEmail').val(refereeData[index-1].referee.Email__c);
+    $('.editRefereeContacted').val(refereeData[index-1].referee.Contacted__c == null || refereeData[index-1].referee.Contacted__c == undefined || refereeData[index-1].referee.Contacted__c.trim() !== 'Yes' ? 'No' : 'Yes');
+    $('.editRefereeContactedDate').val('');
+    
+    if(refereeData[index-1].referee.Contacted_On_Date__c != undefined)
+    {
+        var paymentDate = new Date(refereeData[index-1].referee.Contacted_On_Date__c);
+        var formatted_PaymentDate = (paymentDate.getDate() < 10 ? "0" : "") + paymentDate.getDate() + "/" + (paymentDate.getMonth() < 9 ? "0" : "") + parseInt(paymentDate.getMonth() + 1) + "/" + paymentDate.getFullYear();
+        $('.editRefereeContactedDate').val(formatted_PaymentDate);
+    }
+    
+    $('#refereeModal').modal('show');
+}
+
+function validateArrangement()
+{
+    if($('.staEndDate').val() != '' && !checkdate($('.staEndDate').val()))
+    {
+        alert('Invalid STA End Date. Please correct and submit again.');
+        return false;
+    }
+    
+    if($('.staDueDate').val() != '' && !checkdate($('.staDueDate').val()))
+    {
+        alert("Invalid STA Next Due Date. Please correct and submit again.");
+        return false;
+    }
+
+    if($('.isThisSTA').prop('checked'))
+    {   
+        if($('.staEndDate').val() == '' || ($('.staEndDate').val() != '' && (!checkdate($('.staEndDate').val()) || !isFutureDate($('.staEndDate').val()))))
+        {
+            alert('Invalid STA End Date. Please correct and submit again.');
+            return false;
+        }
+        
+        if($('.staDueDate').val() == '' || ($('.staDueDate').val() != '' && (!checkdate($('.staDueDate').val()) || !isFutureDate($('.staDueDate').val()))))
+        {
+            alert("Invalid STA Next Due Date. Please correct and submit again.");
+            return false;
+        }
+
+        if($('.staNotes').val() == '')
+        {
+            alert("Please enter STA Notes.");
+            return false;
+        }
+
+        if($('.staAmount').val() == '' || parseFloat($('.staAmount').val()) <= 0)
+        {
+            alert("Please enter STA Scheduled Amount.");
+            return false;
+        }
+    }
+}
+
+function isFutureDate(dateString) {
+    // Split the input date string by '/'
+    const [day, month, year] = dateString.split('/').map(Number);
+    
+    // Create a Date object from the input date
+    const inputDate = new Date(year, month - 1, day);
+    
+    // Get the current date
+    const currentDate = new Date();
+    
+    // Set the time of the current date to 00:00:00 to compare only the date part
+    currentDate.setHours(0, 0, 0, 0);
+    
+    // Return true if the input date is greater than the current date
+    return inputDate >= currentDate;
+}
+
+function checkdate(dateInput)
+{
+    var validformat = /^([0-9]{1,2})\/([0-9]{1,2})\/([0-9]{4})$/;
+    
+    if(!validformat.test(dateInput))
+    {
+        return false;
+    }
+    else
+    { 
+        //Detailed check for valid date ranges
+        var monthfield = parseInt(dateInput.split("/")[1]);
+        var dayfield = parseInt(dateInput.split("/")[0]);
+        var yearfield = parseInt(dateInput.split("/")[2]);
+        var dayobj = new Date(yearfield, monthfield-1, dayfield);
+        
+        if((dayobj.getMonth()+1 != monthfield) || (dayobj.getDate() != dayfield) || (dayobj.getFullYear() != yearfield))
+        {
+            return false;
+        }
+        
+        console.log(dayfield);
+        console.log(dayobj.getDate());
+        console.log(monthfield);
+        console.log(dayobj.getMonth()+1);
+        console.log(yearfield);
+        console.log(dayobj.getFullYear());
+    }
+    return true;
+}
+</script>
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyB6IoNLUq0kEHUjf2X03l7ySFLAUqHoOSg&callback=initMap"></script>
+</apex:page>

@@ -1,0 +1,32 @@
+<template>
+    <lightning-card title="Ezidebit payment history" icon-name="custom:custom41">
+        <div class="slds-p-horizontal_small">
+            <template lwc:if={error}>
+                <p class="slds-text-color_error">{error}</p>
+            </template>
+            <template lwc:elseif={loaded}>
+                <p class="summary slds-text-body_small slds-m-bottom_x-small">{summaryLine}</p>
+                <template lwc:if={summary.truncated}>
+                    <p class="slds-text-body_small slds-text-color_weak slds-m-bottom_x-small">Showing the most recent 500 of each. Use the Dishonours and Payments reports for the full list.</p>
+                </template>
+                <template lwc:if={hasRows}>
+                    <div class="table">
+                        <lightning-datatable
+                            key-field="recordId"
+                            data={rows}
+                            columns={columns}
+                            hide-checkbox-column
+                            column-widths-mode="auto">
+                        </lightning-datatable>
+                    </div>
+                </template>
+                <template lwc:else>
+                    <p class="slds-text-color_weak">No payments or failed debits recorded on this agreement yet.</p>
+                </template>
+            </template>
+            <template lwc:else>
+                <lightning-spinner alternative-text="Loading payment history" size="small"></lightning-spinner>
+            </template>
+        </div>
+    </lightning-card>
+</template>

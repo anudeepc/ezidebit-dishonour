@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Fee__c</fullName>
+    <deleteConstraint>SetNull</deleteConstraint>
+    <description>The R4K dishonour fee (Fee__c, type Late Payment) charged to the customer for this failed debit.</description>
+    <label>Dishonour Fee Record</label>
+    <referenceTo>Fee__c</referenceTo>
+    <relationshipLabel>Dishonours</relationshipLabel>
+    <relationshipName>Ezidebit_Dishonours</relationshipName>
+    <required>false</required>
+    <trackHistory>false</trackHistory>
+    <trackTrending>false</trackTrending>
+    <type>Lookup</type>
+</CustomField>

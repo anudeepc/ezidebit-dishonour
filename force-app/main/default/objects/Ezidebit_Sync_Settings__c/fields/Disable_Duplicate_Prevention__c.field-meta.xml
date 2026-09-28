@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Disable_Duplicate_Prevention__c</fullName>
+    <defaultValue>false</defaultValue>
+    <description>Lets the upload create a payment even when the Ezidebit payment ID already exists.</description>
+    <label>Disable Duplicate Prevention</label>
+    <trackTrending>false</trackTrending>
+    <type>Checkbox</type>
+</CustomField>

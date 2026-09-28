@@ -1,0 +1,364 @@
+<apex:page Controller="AdminProcessController" showHeader="false" standardstylesheets="false" action="{!getCreditContractDishonours}">
+
+<!-- CSS files-->
+<apex:stylesheet value="{!URLFOR($Resource.Bootstrap, 'bootstrap-4.3.1-dist/css/bootstrap.min.css')}"/>
+<apex:stylesheet value="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.12.1/jquery-ui.css"/>
+<apex:stylesheet value="{!URLFOR($Resource.sweetalert2, 'dist/sweetalert2.css')}"/>
+<apex:stylesheet value="https://fonts.googleapis.com/icon?family=Material+Icons"/>
+<!-- End of CSS files-->
+
+<!-- JS files -->
+<apex:includeScript value="{!$Resource.JQuery}"/>
+<apex:includeScript value="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.12.1/jquery-ui.js"/>
+<apex:includeScript value="{!URLFOR($Resource.Bootstrap, 'bootstrap-4.3.1-dist/js/bootstrap.min.js')}"/>
+<apex:includeScript value="{!URLFOR($Resource.Bootstrap, 'bootstrap-4.3.1-dist/js/bootstrap.bundle.min.js')}"/>
+<apex:includeScript value="{!URLFOR($Resource.sweetalert2, 'dist/sweetalert2.js')}"/>
+<!-- End of JS files -->
+
+<apex:stylesheet value="https://cdn.datatables.net/1.10.19/css/dataTables.bootstrap4.min.css"/>
+<apex:includeScript value="https://cdn.datatables.net/1.10.19/js/jquery.dataTables.min.js"/>
+<apex:includeScript value="https://cdn.datatables.net/1.10.19/js/dataTables.bootstrap4.min.js"/>
+
+<apex:form >
+
+<apex:actionStatus id="counterStatus" style="align:center;">
+<apex:facet name="start">
+<div style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; opacity: 1; z-index: 1000; background-color: white;">
+    &nbsp;
+</div>
+<div style="position: fixed; top: 0; left: 0; right: 0; bottom: 0;z-index: 1001;">
+    <center><img src="{!$Resource.loadingNew}"/></center>
+    <center><p style="font-size:30px;" id="actionStatusMessage">Actioning Missed Payments</p></center>
+</div>
+</apex:facet>
+</apex:actionStatus>
+
+<apex:actionStatus id="reportStatus" style="align:center;">
+<apex:facet name="start">
+<div style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; opacity: 1; z-index: 1000; background-color: white;">
+    &nbsp;
+</div>
+<div style="position: fixed; top: 0; left: 0; right: 0; bottom: 0;z-index: 1001;">
+    <center><img src="https://cdn.dribbble.com/users/4874/screenshots/1776423/inboxiconanimation_30.gif" width="40%"/></center>
+    <center><p style="font-size:30px;" id="actionStatusMessage">Sending Reports</p></center>
+</div>
+</apex:facet>
+</apex:actionStatus>
+
+
+<title>Admin Process - Missed Payments</title>
+
+<style>
+a:hover {
+    cursor:pointer;
+}
+.tooltip-inner {
+    max-width: 350px;
+    width: 350px; 
+    text-align:left;
+}
+</style>
+
+<!-- complete content div -->
+<div class="container-fluid"> 
+<nav class="navbar navbar-expand-lg navbar-light bg-light" >
+  <a class="navbar-brand" href=""><apex:image value="{!$Resource.R4KCAPIcon}" width="30" height="30" styleclass="d-inline-block align-top"/> R4K CAP</a>
+  <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNavDropdown" aria-controls="navbarNavDropdown" aria-expanded="false" aria-label="Toggle navigation">
+    <span class="navbar-toggler-icon"></span>
+  </button>
+  <div class="collapse navbar-collapse" id="navbarNavDropdown">
+    <ul class="navbar-nav ml-auto w-100 justify-content-end">
+    <li class="nav-item" style="padding-left:5px;padding-right:5px;border-bottom: 5px solid green;">
+        <a onclick="window.open('/apex/AdminProcessUploadPaymentFile?ccCAP={!ccCAP}','_self');" class="btn btn-light btn-sm">Payment Files</a>
+      </li>
+      <li class="nav-item" style="padding-left:5px;padding-right:5px;border-bottom: 5px solid green;">
+        <a onclick="window.open('/apex/AdminProcessRedFlags?ccCAP={!ccCAP}','_self');" class="btn btn-light btn-sm">Red Flags</a>
+      </li>
+      <li class="nav-item" style="padding-left:5px;padding-right:5px;border-bottom: 5px solid green;{!IF(ccCAP,'display:none;','')}">
+        <a onclick="window.open('/apex/AdminProcessApplicantStatus?ccCAP={!ccCAP}','_self');" class="btn btn-light btn-sm">Applicant Status</a>
+      </li>
+      <li class="nav-item" style="padding-left:5px;padding-right:5px;border-bottom: 5px solid green;{!IF(ccCAP,'display:none;','')}">
+        <a onclick="window.open('/apex/AdminProcessAttention?ccCAP={!ccCAP}','_self');" class="btn btn-light btn-sm">Attentions</a>
+      </li>
+      <li class="nav-item active" style="padding-left:5px;padding-right:5px;border-bottom: 5px solid green;{!IF(ccCAP,'display:none;','')}">
+        <a onclick="window.open('/apex/AdminProcessMissedPayments?ccCAP={!ccCAP}','_self');" class="btn btn-light btn-sm">Missed Payments</a>
+      </li>
+      <li class="nav-item active" style="padding-left:5px;padding-right:5px;border-bottom: 5px solid green;{!IF(ccCAP,'','display:none;')}">
+        <a onclick="window.open('/apex/AdminProcessDishonours?ccCAP={!ccCAP}','_self');" class="btn btn-light btn-sm">Dishonours</a>
+      </li>
+      <li class="nav-item" style="padding-left:5px;padding-right:5px;border-bottom: 5px solid green;{!IF(ccCAP,'','display:none;')}">
+        <a onclick="window.open('/apex/AdminProcessForm11A?ccCAP={!ccCAP}','_self');" class="btn btn-light btn-sm">Form 11A</a>
+      </li>
+      <li class="nav-item" style="padding-left:5px;padding-right:5px;">
+        <a onclick="window.open('/apex/AdminProcessArrearsLetters?ccCAP={!ccCAP}','_self');" class="btn btn-light btn-sm">Arrears Letters</a>
+      </li>
+      <li class="nav-item" style="padding-left:5px;padding-right:5px;{!IF(ccCAP,'display:none;','')}">
+        <a onclick="window.open('/apex/AdminProcessEquifaxAlerts?ccCAP={!ccCAP}','_self');" class="btn btn-light btn-sm">Equifax Alerts</a>
+      </li>
+        <li class="nav-item" style="padding-left:5px;padding-right:5px;">
+        <a onclick="window.open('/apex/AdminProcessCompletionLetters?ccCAP={!ccCAP}','_self');" class="btn btn-light btn-sm">Marketing to Customer</a>
+      </li>
+      <li class="nav-item" style="padding-left:5px;padding-right:5px;">
+        <a onclick="window.open('/apex/AdminProcessEndOfLease?ccCAP={!ccCAP}','_self');" class="btn btn-light btn-sm">EOL</a>
+      </li>
+      <li class="nav-item" style="padding-left:5px;padding-right:5px;">
+        <a onclick="window.open('/apex/AdminProcessCustomerStatements?ccCAP={!ccCAP}','_self');" class="btn btn-light btn-sm">Customer Statements</a>
+      </li>
+      <li class="nav-item" style="padding-left:5px;padding-right:5px;">
+        <a class="btn btn-light btn-sm" onclick="window.open('https://rent4keeps.quip.com/e9mqAKCrKkWZ/Centralised-Admin-Process-CAP-2019-Enhancements','_blank');"><i class="material-icons">help</i></a>
+      </li>    
+    </ul>
+  </div>
+</nav>
+
+<!-- command buttons div -->
+<div style="margin-top:20px;margin-below:20px;">
+<apex:outputPanel rendered="{!!showCAPPanel}">
+<a class="btn btn-secondary btn-block text-white" onclick="checkRemaining();">Next</a>
+<apex:commandButton styleClass="btn btn-secondary btn-block" value="Action Dishonours" action="{!actionDishonours}" onclick="return checkMultipleSMS();"/>
+<apex:commandButton styleClass="btn btn-secondary btn-block" value="Mass Ignore Dishonours" action="{!actionDishonours}" onclick="return massIgnore();"/>
+<apex:commandButton styleClass="btn btn-secondary btn-block" value="Show Dishonours Summary" action="{!showCAPPanel}"/>
+</apex:outputPanel>
+
+<apex:outputPanel rendered="{!showCAPPanel}">
+<a class="btn btn-secondary btn-block text-white" onclick="checkRemaining();">Next</a>
+<a class="btn btn-secondary btn-block text-white" href="/apex/AdminProcessDishonours?ccCAP={!ccCAP}">Show Dishonours</a>
+</apex:outputPanel>
+
+</div>
+<!-- end of command buttons div -->
+
+
+<apex:outputPanel rendered="{!!showCAPPanel}" id="paymentTablePanel" layout="none">
+<div style="margin-top:20px;">
+    <a style="color:white;" class="btn btn-success" onclick="window.open('/apex/AdminProcessDishonours','_self');">Dishonours <span class="badge badge-light">{!totalDishonouredContracts}</span></a>
+</div>
+
+<div style="margin-top:20px;">
+<table id="missedPaymentsTable" class="table table-sm" style="font-size:14px;">
+
+<thead class="thead-light" style="font-size:13px;">
+<tr>
+<th><input type="checkbox" class="form-control rowcheckAll" onclick="checkAllRows(this);" style="width:25px;height:25px;"/></th>
+<th>Agreement</th>
+<th>Applicant</th>
+<th>Dishonoured Date</th>
+<th>Reason for Dishonour</th>
+<th># Days Missed</th>
+<th>Last Paid Date</th>
+<th>Payment Freq</th>
+<th>TAV</th>
+<th>Total Paid</th>
+<th># Days Since Fee Charged</th>
+<th>Rem. Amt</th>
+<th>Sched. Amt</th>
+<th>Actual Arrears</th>
+<th>CA</th>
+<th>Fees/Letter/Ignore</th>
+<th>Action</th>
+</tr>
+</thead>
+
+<tbody>
+<apex:repeat value="{!creditContractWrappers}" var="wrap">
+<tr class="tablerow" data-toggle="tooltip" data-placement="top" title="{!wrap.tooltip}" data-html="true">
+<td><apex:inputCheckbox styleclass="form-control rowCheck" value="{!wrap.checkBoxSelected}" style="width:25px;height:25px;"/></td>
+<td class="oppName" style="text-align:left;"><b><a target="_blank" href="/{!wrap.opp.Id}">{!wrap.opp.Name}</a></b></td>
+<td style="text-align:left;" class="accountName"><b><a target="_blank" href="/{!wrap.opp.Account.Id}">{!wrap.opp.Account.Name}</a></b></td>
+<td><apex:outputText value="{0,date,dd/MM/yyyy}"><apex:param value="{!wrap.opp.Ezidebit_Payment_Status_Date__c}"/></apex:outputText></td>
+<td style="text-align:center;">{!wrap.opp.Reason_for_Dishonour__c}</td>
+<td style="text-align:center;">{!wrap.opp.Days_Since_Expected_Payment__c}</td>
+<td><apex:outputText value="{0,date,dd/MM/yyyy}"><apex:param value="{!wrap.opp.Last_Payment_Received_Date__c}"/></apex:outputText></td>
+<td style="text-align:center;">{!wrap.opp.Payment_Frequency_Number__c}</td>
+<td><apex:outputText value="{0,number,$#,##0.00}"><apex:param value="{!wrap.opp.Amount}"/></apex:outputText></td>
+<td><apex:outputText value="{0,number,$#,##0.00}"><apex:param value="{!wrap.opp.Total_Paid_Amount__c}"/></apex:outputText></td>
+<td>{!IF(wrap.opp.Missed_Payment_Charged_Date__c == null, null, TODAY() - wrap.opp.Missed_Payment_Charged_Date__c)}</td>
+<td><apex:outputText value="{0,number,$#,##0.00}"><apex:param value="{!wrap.opp.Remaining_Amount__c}"/></apex:outputText></td>
+<td><apex:outputText value="{0,number,$#,##0.00}"><apex:param value="{!wrap.opp.Scheduled_Amount__c}"/></apex:outputText></td>
+<td><apex:outputText value="{0,number,$#,##0.00}"><apex:param value="{!wrap.opp.Actual_Arrears__c}"/></apex:outputText></td>
+<td> 
+    <b><apex:commandLink action="/{!wrap.opp.Last_Collection_Activity__c}" target="_blank" value="{!wrap.opp.Last_Collection_Activity__r.Name}" rendered="{!IF(AND(wrap.opp.Last_Collection_Activity__c <> null, wrap.opp.Last_Collection_Activity__r.Collection_Outcome1__c <> 'Success'),true,false)}"/></b> 
+</td>
+<td>
+<apex:selectList value="{!wrap.smsorfeesorignore}" multiselect="false" size="1" styleClass="form-control smsfeesignore">
+    <apex:selectOptions value="{!wrap.mpActionoptions}"/>
+</apex:selectList>
+</td>
+<td> <apex:commandButton styleClass="btn btn-success btn-block" value="Action" action="{!actionDishonours}" onclick="return checkRow(this);"/> </td>
+</tr>
+</apex:repeat>
+</tbody>
+</table>
+ 
+</div>
+
+</apex:outputPanel>
+
+
+
+<div style="margin-top:20px;margin-bottom:15px;">
+
+<apex:outputPanel rendered="{!showCAPPanel}">
+<div class="table-responsive">
+<table class="table" style="width:60%;margin:auto;">
+    <tbody>
+        <tr class="bg-info" style="color:white;">
+            <td width="50%">Summary</td><td width="50%" style="text-align:center;vertical-align:middle;">Count</td>
+        </tr>
+        <tr>
+            <td>Total Direct Debit Default Letters Sent</td>
+            <td style="text-align:center;vertical-align:middle;">{!todaysCAPSummary.MP_Total_SMS_Sent__c}</td>
+        </tr>
+        <tr>
+            <td>Total Fee Charged</td>
+            <td style="text-align:center;vertical-align:middle;">{!todaysCAPSummary.MP_Total_Fee_Charged__c}</td>
+        </tr>
+        <tr>
+            <td>Total Ignored</td>
+            <td style="text-align:center;vertical-align:middle;">{!todaysCAPSummary.MP_Ignored__c}</td>
+        </tr>
+        <tr>
+            <td>CA Created</td>
+            <td style="text-align:center;vertical-align:middle;">{!todaysCAPSummary.MP_CA_Created__c}</td>
+        </tr>
+        <tr>
+            <td>CA Updated</td>
+            <td style="text-align:center;vertical-align:middle;">{!todaysCAPSummary.MP_CA_Updated__c}</td>
+        </tr>
+        <tr style="padding-top: 20px;" class="text-center">
+            <td colspan="2">
+                  <div class="form-row align-items-center">
+                    <div class="col-auto">
+                      <div class="form-check mb-2">
+                        <label class="form-check-label" for="autoSizingCheck">
+                          Send Dishonours Summary Report
+                        </label>
+                      </div>
+                    </div>
+                    <div class="col-auto">
+                      <apex:selectList size="1" multiselect="false" value="{!missedPaymentsEmailAddress}" styleClass="form-control">
+                            <apex:selectOptions value="{!capEmailReceiverOptions}"/>
+                      </apex:selectList>
+                    </div>
+                    <div class="col-auto">
+                      <apex:commandButton styleclass="btn btn-success" style="color:white;" value="Action" action="{!sendDishonoursSummary}" status="reportStatus" reRender="dummy"/>
+                    </div>
+                  </div>
+            </td>
+        </tr>
+    </tbody>
+</table>
+</div>
+</apex:outputPanel>
+</div>
+
+
+</div>
+<!-- end of complete content div -->
+</apex:form>
+
+<script>
+
+$(document).ready(
+    function()
+    {        
+        $('#missedPaymentsTable').dataTable();
+        
+        $('[data-toggle="tooltip"]').tooltip();
+});
+
+function checkRow(elem){
+    var index = $(elem).closest('tr').index();
+    var checkboxes = document.getElementsByClassName('rowCheck');
+    var count = 0;
+    for(var i=0;i<checkboxes.length;i++){
+        if(i == index){
+            checkboxes[i].checked = true;
+        }else{
+            checkboxes[i].checked = false;
+        }
+    }
+}
+
+function sendingCAPReports(){
+    swal({
+      title: "Success!",
+      text: "Sending CAP Reports",
+      type: "success",
+      confirmButtonText: "Cool"
+    });
+    document.getElementById('actionStatusMessage').innerHTML = 'Sending CAP Reports';
+}
+
+function checkRemaining()
+{
+    if('{!showSendReports}' != 'true')
+    {
+        swal({
+          title: "Warning!",
+          text: "Please action all Dishonours to proceed to next screen",
+          type: "warning",
+          confirmButtonText: "Cool"
+        });
+        return false;
+    }else{
+        window.open('/apex/AdminProcessArrearsLetters?ccCAP={!ccCAP}','_self');
+    } 
+}
+
+function checkAllRows(elem){
+    var checkboxes = document.getElementsByClassName('rowCheck');
+    if(elem.checked){
+        for(var i=0;i<checkboxes.length;i++){
+            checkboxes[i].checked = true;
+        }   
+    }else{
+        for(var i=0;i<checkboxes.length;i++){
+            checkboxes[i].checked = false;
+        }
+    }
+}
+
+function checkMultipleSMS(){
+    var checkboxes = document.getElementsByClassName('rowCheck');
+    var count = 0;
+    
+    for(var i=0;i<checkboxes.length;i++){
+        if(checkboxes[i].checked){
+            count++;
+        }
+    }
+    
+    if(count > 4)
+    {
+        swal({
+          title: "warning!",
+          text: "You cannot action more than 4 agreements at once. Please uncheck extra agreements.",
+          type: "warning",
+          confirmButtonText: "Cool"
+        });
+        return false;
+    }
+
+    swal({
+      title: "success!",
+      text: "Actioning Dishonours",
+      type: "success",
+      confirmButtonText: "Cool"
+    });
+}
+
+function massIgnore(){
+    var checkboxes = document.getElementsByClassName('rowCheck');
+    for(var i=0;i<checkboxes.length;i++){
+        checkboxes[i].checked = true;
+    }
+    $('.smsfeesignore').val('Ignore');
+    checkboxes = document.getElementsByClassName('sendLetter');
+    for(var i=0;i<checkboxes.length;i++){
+        checkboxes[i].checked = false;
+    }   
+}
+
+</script>
+</apex:page>

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata">
+    <customSettingsType>Hierarchy</customSettingsType>
+    <description>On/off switches for the Ezidebit payment and dishonour build. Every step is on unless its Disable box is ticked, so no record is needed for normal running.</description>
+    <enableFeeds>false</enableFeeds>
+    <label>Ezidebit Sync Settings</label>
+    <visibility>Public</visibility>
+</CustomObject>

@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Type__c</fullName>
+    <description>Instalment: a scheduled debit on the customer cycle failed. Automatic retry: Ezidebit re-debited a failed instalment (about 4 business days later) and it failed again. Fatal: Ezidebit status F, future debits stopped. Late return: a payment first reported successful was taken back. Card declined: a customer card payment on the website failed.</description>
+    <label>Type</label>
+    <required>false</required>
+    <trackHistory>false</trackHistory>
+    <trackTrending>false</trackTrending>
+    <type>Picklist</type>
+    <valueSet>
+        <restricted>true</restricted>
+        <valueSetDefinition>
+            <sorted>false</sorted>
+            <value>
+                <fullName>Instalment</fullName>
+                <default>false</default>
+                <label>Instalment</label>
+            </value>
+            <value>
+                <fullName>Automatic retry</fullName>
+                <default>false</default>
+                <label>Automatic retry</label>
+            </value>
+            <value>
+                <fullName>Fatal</fullName>
+                <default>false</default>
+                <label>Fatal</label>
+            </value>
+            <value>
+                <fullName>Late return</fullName>
+                <default>false</default>
+                <label>Late return</label>
+            </value>
+            <value>
+                <fullName>Card declined</fullName>
+                <default>false</default>
+                <label>Card declined</label>
+            </value>
+        </valueSetDefinition>
+    </valueSet>
+</CustomField>

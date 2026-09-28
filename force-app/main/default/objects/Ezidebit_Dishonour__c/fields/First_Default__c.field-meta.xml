@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>First_Default__c</fullName>
+    <defaultValue>false</defaultValue>
+    <description>True when this is the first failed scheduled debit recorded on the contract and no direct debit default notice has been sent. NCC s87 notice required within 14 days of the debit date.</description>
+    <label>First Default</label>
+    <trackHistory>false</trackHistory>
+    <trackTrending>false</trackTrending>
+    <type>Checkbox</type>
+</CustomField>

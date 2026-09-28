@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Debit_Type__c</fullName>
+    <description>What kind of Ezidebit debit this payment was.</description>
+    <label>Debit Type</label>
+    <required>false</required>
+    <trackHistory>false</trackHistory>
+    <trackTrending>false</trackTrending>
+    <type>Picklist</type>
+    <valueSet>
+        <restricted>true</restricted>
+        <valueSetDefinition>
+            <sorted>false</sorted>
+            <value>
+                <fullName>Instalment</fullName>
+                <default>false</default>
+                <label>Instalment</label>
+            </value>
+            <value>
+                <fullName>Automatic retry</fullName>
+                <default>false</default>
+                <label>Automatic retry</label>
+            </value>
+            <value>
+                <fullName>Online card</fullName>
+                <default>false</default>
+                <label>Online card</label>
+            </value>
+            <value>
+                <fullName>First debit</fullName>
+                <default>false</default>
+                <label>First debit</label>
+            </value>
+            <value>
+                <fullName>Arrangement</fullName>
+                <default>false</default>
+                <label>Arrangement</label>
+            </value>
+        </valueSetDefinition>
+    </valueSet>
+</CustomField>

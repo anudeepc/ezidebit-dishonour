@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Original_Dishonour__c</fullName>
+    <deleteConstraint>SetNull</deleteConstraint>
+    <description>For an automatic retry: the failed instalment it retried.</description>
+    <label>Original Dishonour</label>
+    <referenceTo>Ezidebit_Dishonour__c</referenceTo>
+    <relationshipLabel>Retries</relationshipLabel>
+    <relationshipName>Retries</relationshipName>
+    <required>false</required>
+    <trackHistory>false</trackHistory>
+    <trackTrending>false</trackTrending>
+    <type>Lookup</type>
+</CustomField>

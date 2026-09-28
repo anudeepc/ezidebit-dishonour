@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Debit_Date__c</fullName>
+    <description>The date Ezidebit attempted the debit. The default occurs on this date (NCC s87(2)).</description>
+    <encryptionScheme>None</encryptionScheme>
+    <label>Debit Date</label>
+    <required>false</required>
+    <trackHistory>false</trackHistory>
+    <trackTrending>false</trackTrending>
+    <type>Date</type>
+</CustomField>
