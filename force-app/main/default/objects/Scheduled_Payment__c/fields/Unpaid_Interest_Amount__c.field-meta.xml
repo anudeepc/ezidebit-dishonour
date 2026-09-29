@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Unpaid_Interest_Amount__c</fullName>
+    <formula>If(Paid_Amount__c&gt;0 &amp;&amp; !Is_in_Hardship__c,IF((Daily_Interest_Rate__c * Payment_Frequency_Number__c * Loan_Balance_Amount__c)&gt; Paid_Amount__c ,(Daily_Interest_Rate__c * Payment_Frequency_Number__c * Loan_Balance_Amount__c) - Paid_Amount__c,0) - Additional_Interest_Paid__c,0)</formula>
+    <formulaTreatBlanksAs>BlankAsZero</formulaTreatBlanksAs>
+    <label>Unpaid Interest Amount</label>
+    <precision>18</precision>
+    <required>false</required>
+    <scale>2</scale>
+    <trackHistory>false</trackHistory>
+    <trackTrending>false</trackTrending>
+    <type>Currency</type>
+</CustomField>
