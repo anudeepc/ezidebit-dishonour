@@ -41,7 +41,7 @@ private class EzidebitDishonourBackfillTest {
 
     private static String item(Date fromDate) {
         Territory__c ter = [SELECT Id FROM Territory__c LIMIT 1];
-        return ter.Id + '|' + String.valueOf(fromDate) + '|' + String.valueOf(fromDate.addDays(13));
+        return String.valueOf(fromDate) + '|' + ter.Id + '|' + String.valueOf(fromDate.addDays(13));
     }
 
     @isTest
@@ -79,11 +79,23 @@ private class EzidebitDishonourBackfillTest {
         EzidebitDishonourBackfillBatch b = new EzidebitDishonourBackfillBatch(Date.newInstance(2025, 1, 1), Date.newInstance(2025, 1, 31), true);
         List<String> items = (List<String>) b.start(null);
         Integer territories = [SELECT COUNT() FROM Territory__c WHERE Ezidebit_DigitalKey__c != null AND Status__c = 'Active'];
-        System.assertEquals(territories * 3, items.size(), '31 days = three 14-day windows per territory');
-        if (!items.isEmpty()) {
-            System.assert(items[0].endsWith('2025-01-01|2025-01-14'));
-            System.assert(items[items.size() - 1].endsWith('2025-01-29|2025-01-31'));
+        System.assert(items.size() >= territories * 3, 'at least three windows per territory for 31 days');
+        for (Integer i = 1; i < items.size(); i++) {
+            System.assert(items[i - 1] <= items[i], 'oldest window first');
+            System.assertEquals(3, items[i].split('\\|').size());
         }
+        if (!items.isEmpty()) {
+            System.assert(items[0].startsWith('2025-01-01|'));
+            System.assert(items[items.size() - 1].endsWith('|2025-01-31'));
+        }
+    }
+
+    @isTest
+    static void windowDays_shrinkForBusyAccounts() {
+        System.assertEquals(14, EzidebitDishonourBackfillBatch.windowDays(null));
+        System.assertEquals(14, EzidebitDishonourBackfillBatch.windowDays(28 * 10), 'quiet account: two weeks at a time');
+        System.assertEquals(4, EzidebitDishonourBackfillBatch.windowDays(28 * 250), 'busiest account: about 1,000 failures a call');
+        System.assertEquals(2, EzidebitDishonourBackfillBatch.windowDays(28 * 2000), 'never less than 2 days');
     }
 
     @isTest

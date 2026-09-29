@@ -31,30 +31,57 @@ public without sharing class EzidebitDishonourBackfillBatch implements Database.
         this.dryRun = dryRun != false;
     }
 
-    /** Work items "territoryId|windowStart|windowEnd", oldest window first. */
+    /** Aim for about this many failures per Ezidebit call: a 14-day call for the busiest account ran out of heap. */
+    @TestVisible static final Integer ROWS_PER_CALL = 1000;
+
+    /**
+     * Work items "windowStart|territoryId|windowEnd", oldest window first. Each territory's window is
+     * sized from its failures in the last 28 days, so a busy account is asked a few days at a time.
+     */
     public Iterable<String> start(Database.BatchableContext bc) {
-        List<Territory__c> ters = [SELECT Id FROM Territory__c WHERE Ezidebit_DigitalKey__c != null AND Status__c = 'Active' ORDER BY Name];
+        List<Territory__c> ters = [SELECT Id, Short_Name__c FROM Territory__c WHERE Ezidebit_DigitalKey__c != null AND Status__c = 'Active' ORDER BY Name];
+        Map<String, Integer> recent = new Map<String, Integer>();
+        for (AggregateResult ar : [SELECT Territory_Name__c t, COUNT(Id) c FROM Ezidebit_Dishonour__c
+                                   WHERE Debit_Date__c = LAST_N_DAYS:28 GROUP BY Territory_Name__c]) {
+            recent.put((String) ar.get('t'), (Integer) ar.get('c'));
+        }
         List<String> items = new List<String>();
-        for (Date w = fromDate; w <= toDate; w = w.addDays(WINDOW_DAYS)) {
-            Date wEnd = w.addDays(WINDOW_DAYS - 1) < toDate ? w.addDays(WINDOW_DAYS - 1) : toDate;
-            for (Territory__c t : ters) {
-                items.add(t.Id + '|' + String.valueOf(w) + '|' + String.valueOf(wEnd));
+        for (Territory__c t : ters) {
+            Integer days = windowDays(recent.get(t.Short_Name__c));
+            for (Date w = fromDate; w <= toDate; w = w.addDays(days)) {
+                Date wEnd = w.addDays(days - 1) < toDate ? w.addDays(days - 1) : toDate;
+                items.add(String.valueOf(w) + '|' + t.Id + '|' + String.valueOf(wEnd));
             }
         }
+        items.sort(); // oldest window first, so each original is recorded before its retry
         return items;
+    }
+
+    @TestVisible
+    static Integer windowDays(Integer failuresLast28Days) {
+        if (failuresLast28Days == null || failuresLast28Days <= 0) {
+            return WINDOW_DAYS;
+        }
+        Decimal perDay = failuresLast28Days / 28.0;
+        Integer days = (Integer) Math.floor(ROWS_PER_CALL / perDay);
+        return Math.max(2, Math.min(WINDOW_DAYS, days));
     }
 
     public void execute(Database.BatchableContext bc, List<String> scope) {
         for (String item : scope) {
             List<String> parts = item.split('\\|');
             try {
-                Territory__c ter = [SELECT Id, Name, Short_Name__c, Ezidebit_DigitalKey__c FROM Territory__c WHERE Id = :parts[0]];
+                Territory__c ter = [SELECT Id, Name, Short_Name__c, Ezidebit_DigitalKey__c FROM Territory__c WHERE Id = :parts[1]];
                 EzidebitAPI.BasicHttpBinding_INonPCIService stub = new EzidebitAPI.BasicHttpBinding_INonPCIService();
                 stub.inputHttpHeaders_x = new Map<String, String>();
                 stub.endpoint_x = ENDPOINT;
                 stub.timeout_x = 110000;
                 EzidebitAPI.EziResponseOfArrayOfPaymentTHgMB7oL response = stub.GetPayments(
-                    ter.Ezidebit_DigitalKey__c, 'FAILED', 'ALL', 'ALL', '', parts[1], parts[2], 'SETTLEMENT', '', '');
+                    ter.Ezidebit_DigitalKey__c, 'FAILED', 'ALL', 'ALL', '', parts[0], parts[2], 'SETTLEMENT', '', '');
+                if (response != null && response.Error != null && response.Error != 0) {
+                    errors.add(ter.Short_Name__c + ' ' + parts[0] + '..' + parts[2] + ': Ezidebit error ' + response.Error + ' ' + response.ErrorMessage);
+                    continue;
+                }
                 if (response == null || response.Data == null || response.Data.Payment == null) {
                     continue;
                 }
@@ -69,7 +96,7 @@ public without sharing class EzidebitDishonourBackfillBatch implements Database.
                 opts.activeOnly = true;
                 opts.dryRun = dryRun;
                 EzidebitDishonourService.Result r = EzidebitDishonourService.capture(response.Data.Payment, territoryByPaymentId, opts);
-                String month = parts[1].left(7);
+                String month = parts[0].left(7);
                 Integer n = dryRun ? r.wouldInsert : r.inserted;
                 countByMonth.put(month, (countByMonth.containsKey(month) ? countByMonth.get(month) : 0) + n);
                 feesByMonth.put(month, (feesByMonth.containsKey(month) ? feesByMonth.get(month) : 0) + r.ezidebitFees);
@@ -92,6 +119,12 @@ public without sharing class EzidebitDishonourBackfillBatch implements Database.
         for (String m : months) {
             body += m + '  ' + countByMonth.get(m) + (dryRun ? '  $' + feesByMonth.get(m).setScale(2) : '') + '\n';
         }
+        Integer failedWindows = 0;
+        if (bc != null && bc.getJobId() != null) {
+            List<AsyncApexJob> job = [SELECT NumberOfErrors FROM AsyncApexJob WHERE Id = :bc.getJobId()];
+            failedWindows = job.isEmpty() || job[0].NumberOfErrors == null ? 0 : job[0].NumberOfErrors;
+        }
+        body += '\nWindows that failed on a Salesforce limit (not counted above): ' + failedWindows + '\n';
         if (!errors.isEmpty()) {
             body += '\nErrors (' + errors.size() + '):\n' + String.join(errors, '\n').left(8000);
         }
