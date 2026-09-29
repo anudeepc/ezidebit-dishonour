@@ -51,6 +51,12 @@ public with sharing class CollectionDishonourPanel {
     public Boolean dshCanStopInterest { get; private set; }
     public String dshPayoutStatementUrl { get; private set; }
     public String dshAgreementStatementUrl { get; private set; }
+    // Plain values for the page, so it never depends on field-level access to the agreement's new fields.
+    public Id dshOppId { get; private set; }
+    public Date dshInterestStoppedFrom { get; private set; }
+    public String dshInterestStopReason { get; private set; }
+    public String dshCustomerEmail { get; private set; }
+    public Boolean dshReady { get { return dshHasAgreement == true && dshOppId != null; } }
 
     public CollectionDishonourPanel(ApexPages.StandardController controller) {
         dshRows = new List<Ezidebit_Dishonour__c>();
@@ -167,6 +173,10 @@ public with sharing class CollectionDishonourPanel {
 
     @TestVisible
     void loadTools(Opportunity opp, List<Payment__c> payments, Date today) {
+        dshOppId = opp.Id;
+        dshInterestStoppedFrom = opp.Interest_Stopped_From__c;
+        dshInterestStopReason = opp.Interest_Stop_Reason__c;
+        dshCustomerEmail = opp.Account == null ? null : opp.Account.PersonEmail;
         dshPayoutStatementUrl = '/apex/EarlyPayoutFigureStatement?oppId=' + opp.Id;
         dshAgreementStatementUrl = '/apex/CreditContractStatement?fullStmt=yes&oppId=' + opp.Id;
         dshNewHardshipUrl = URL.getOrgDomainUrl().toExternalForm() + '/lightning/o/Hardship_Request__c/new?defaultFieldValues='

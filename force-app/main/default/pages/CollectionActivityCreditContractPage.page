@@ -92,7 +92,7 @@
 <!-- CA Header --> 
 
 <!-- Ezidebit dishonours summary (CollectionDishonourPanel) -->
-<apex:outputPanel layout="none" rendered="{!dshHasAgreement}">
+<apex:outputPanel layout="none" rendered="{!dshReady}">
 <div class="dsh-strip dsh-{!IF(dshHasAccess, dshTone, 'secondary')}">
 <apex:outputPanel layout="none" rendered="{!!dshHasAccess}">
     Ezidebit dishonours are hidden: ask your Salesforce admin for the "Ezidebit Dishonour Access" permission set.
@@ -148,22 +148,22 @@
         <div class="dsh-sub">{!dshArrangement.summary}</div>
     </div>
     </apex:outputPanel>
-    <apex:outputPanel layout="none" rendered="{!dshOpp.Interest_Stopped_From__c != null}">
+    <apex:outputPanel layout="none" rendered="{!dshInterestStoppedFrom != null}">
     <div class="dsh-tile">
         <div class="dsh-label">Interest</div>
-        <div class="dsh-value dsh-text-warning">Stopped from&nbsp;<apex:outputText value="{0,date,d MMM yyyy}"><apex:param value="{!dshOpp.Interest_Stopped_From__c}"/></apex:outputText></div>
-        <div class="dsh-sub">{!dshOpp.Interest_Stop_Reason__c}</div>
+        <div class="dsh-value dsh-text-warning">Stopped from&nbsp;<apex:outputText value="{0,date,d MMM yyyy}"><apex:param value="{!dshInterestStoppedFrom}"/></apex:outputText></div>
+        <div class="dsh-sub">{!dshInterestStopReason}</div>
     </div>
     </apex:outputPanel>
     <div class="dsh-tile ml-auto" style="align-self:center;">
         <a class="btn btn-sm btn-outline-dark" href="{!dshPayoutStatementUrl}" target="_blank">Payout statement</a>
         <a class="btn btn-sm btn-outline-dark" href="{!dshAgreementStatementUrl}" target="_blank">Agreement statement</a>
         <apex:commandButton styleClass="btn btn-sm btn-outline-dark" value="Email statement" action="{!dshSendStatement}"
-            onclick="return confirm('Email the agreement statement to {!JSENCODE(IF(ISBLANK(dshOpp.Account.PersonEmail), 'nobody (no email on file: it will be saved for posting)', dshOpp.Account.PersonEmail))}?');"/>
+            onclick="return confirm('Email the agreement statement to {!JSENCODE(IF(ISBLANK(dshCustomerEmail), 'nobody (no email on file: it will be saved for posting)', dshCustomerEmail))}?');"/>
         <apex:outputPanel layout="none" rendered="{!dshHardshipAccess}">
             <a class="btn btn-sm btn-outline-dark" href="{!dshNewHardshipUrl}" target="_blank">Log hardship request</a>
         </apex:outputPanel>
-        <a class="btn btn-sm btn-outline-danger" href="/apex/InterestStop?oppId={!dshOpp.Id}" target="_blank">{!IF(dshOpp.Interest_Stopped_From__c != null, 'Interest stop', 'Stop interest')}</a>
+        <a class="btn btn-sm btn-outline-danger" href="/apex/InterestStop?oppId={!dshOppId}" target="_blank">{!IF(dshInterestStoppedFrom != null, 'Interest stop', 'Stop interest')}</a>
     </div>
 </div>
 </div>
