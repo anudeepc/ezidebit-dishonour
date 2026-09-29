@@ -38,6 +38,7 @@ export default class EzidebitPaymentHistory extends LightningElement {
                 resultClass: RESULT_CLASS[r.result] || ''
             }));
             this.summary = data;
+            this.columns = data.showEzidebitFees ? COLUMNS : COLUMNS.filter((c) => c.fieldName !== 'ezidebitFee');
             this.error = undefined;
             this.loaded = true;
         } else if (error) {
@@ -56,6 +57,7 @@ export default class EzidebitPaymentHistory extends LightningElement {
         }
         const s = this.summary;
         const money = (n) => new Intl.NumberFormat('en-AU', { style: 'currency', currency: 'AUD' }).format(n || 0);
-        return `${s.paidCount} paid (${money(s.paidAmount)}) · ${s.failedCount} failed · ${s.openInstalments} missed instalment${s.openInstalments === 1 ? '' : 's'} open · Ezidebit fees ${money(s.ezidebitFees)} · R4K fees ${money(s.r4kFees)}`;
+        const ezidebit = s.showEzidebitFees ? ` · Ezidebit fees ${money(s.ezidebitFees)}` : '';
+        return `${s.paidCount} paid (${money(s.paidAmount)}) · ${s.failedCount} failed · ${s.openInstalments} missed instalment${s.openInstalments === 1 ? '' : 's'} open${ezidebit} · R4K fees ${money(s.r4kFees)}`;
     }
 }

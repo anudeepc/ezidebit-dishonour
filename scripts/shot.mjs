@@ -17,10 +17,12 @@ let id = 0; const pending = new Map();
 ws.addEventListener('message', e => { const m = JSON.parse(e.data); if (m.id && pending.has(m.id)) { pending.get(m.id)(m); pending.delete(m.id); } });
 const send = (method, params = {}) => new Promise(r => { const i = ++id; pending.set(i, r); ws.send(JSON.stringify({ id: i, method, params })); });
 await send('Page.enable');
+await send('Runtime.enable');
+ws.addEventListener('message', e => { const m = JSON.parse(e.data); if (m.method === 'Runtime.exceptionThrown') console.log('JSERROR', JSON.stringify(m.params.exceptionDetails).slice(0, 400)); });
 await send('Emulation.setDeviceMetricsOverride', { width: +width, height: 1200, deviceScaleFactor: 1, mobile: +width < 600 });
 await send('Page.navigate', { url });
 await sleep(+waitMs);
-if (js) { await send('Runtime.evaluate', { expression: js }); await sleep(2500); }
+if (js) { const r = await send('Runtime.evaluate', { expression: js }); if (r.result && r.result.exceptionDetails) console.log('EVALERROR', JSON.stringify(r.result.exceptionDetails).slice(0, 400)); else console.log('EVAL', JSON.stringify(r.result && r.result.result && r.result.result.value).slice(0, 1500)); await sleep(2500); }
 const { result: { contentSize } } = await send('Page.getLayoutMetrics');
 const h = Math.min(Math.ceil(contentSize.height), 6000);
 await send('Emulation.setDeviceMetricsOverride', { width: +width, height: h, deviceScaleFactor: 1, mobile: +width < 600 });

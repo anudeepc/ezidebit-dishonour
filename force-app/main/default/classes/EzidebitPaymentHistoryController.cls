@@ -42,11 +42,14 @@ public with sharing class EzidebitPaymentHistoryController {
         @AuraEnabled public Decimal ezidebitFees = 0;
         @AuraEnabled public Decimal r4kFees = 0;
         @AuraEnabled public Boolean truncated = false;
+        // Ezidebit's fee is R4K's cost, not a customer charge: shown only to people with Dishonour access.
+        @AuraEnabled public Boolean showEzidebitFees = false;
     }
 
     @AuraEnabled(cacheable=true)
     public static History getHistory(Id opportunityId) {
         History h = new History();
+        h.showEzidebitFees = Schema.sObjectType.Ezidebit_Dishonour__c.isAccessible();
         if (opportunityId == null) {
             return h;
         }
@@ -67,7 +70,7 @@ public with sharing class EzidebitPaymentHistoryController {
             r.result = takenBack ? 'Taken back' : 'Paid';
             r.type = p.isSet('Debit_Type__c') && p.Debit_Type__c != null ? p.Debit_Type__c : (p.RecordType != null ? p.RecordType.Name : null);
             r.amount = p.Actual_Amount__c;
-            r.ezidebitFee = p.Client_Fees__c;
+            r.ezidebitFee = h.showEzidebitFees ? p.Client_Fees__c : null;
             r.detail = takenBack
                 ? 'Bank took it back' + (p.isSet('Late_Returned_Date__c') && p.Late_Returned_Date__c != null ? ' on ' + p.Late_Returned_Date__c.format() : '')
                 : null;
@@ -76,7 +79,7 @@ public with sharing class EzidebitPaymentHistoryController {
                 h.paidCount++;
                 h.paidAmount += p.Actual_Amount__c == null ? 0 : p.Actual_Amount__c;
             }
-            h.ezidebitFees += p.Client_Fees__c == null ? 0 : p.Client_Fees__c;
+            h.ezidebitFees += !h.showEzidebitFees || p.Client_Fees__c == null ? 0 : p.Client_Fees__c;
         }
         if (!Schema.sObjectType.Ezidebit_Dishonour__c.isAccessible()) {
             h.rows.sort();

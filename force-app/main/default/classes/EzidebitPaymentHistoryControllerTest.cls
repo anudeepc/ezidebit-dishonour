@@ -69,6 +69,11 @@ private class EzidebitPaymentHistoryControllerTest {
         System.runAs(u) {
             EzidebitPaymentHistoryController.History h = EzidebitPaymentHistoryController.getHistory(pays.isEmpty() ? null : pays[0].Agreement__c);
             System.assertEquals(0, h.failedCount, 'no Dishonour access: failures are left out, not an error');
+            System.assertEquals(false, h.showEzidebitFees, 'the Ezidebit fee is R4K\'s cost: hidden without Dishonour access');
+            System.assertEquals(0, h.ezidebitFees);
+            for (EzidebitPaymentHistoryController.Row r : h.rows) {
+                System.assertEquals(null, r.ezidebitFee);
+            }
         }
     }
 }

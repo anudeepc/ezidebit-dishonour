@@ -151,7 +151,7 @@
     <apex:outputPanel layout="none" rendered="{!dshOpp.Interest_Stopped_From__c != null}">
     <div class="dsh-tile">
         <div class="dsh-label">Interest</div>
-        <div class="dsh-value dsh-text-warning">Stopped from <apex:outputText value="{0,date,d MMM yyyy}"><apex:param value="{!dshOpp.Interest_Stopped_From__c}"/></apex:outputText></div>
+        <div class="dsh-value dsh-text-warning">Stopped from&nbsp;<apex:outputText value="{0,date,d MMM yyyy}"><apex:param value="{!dshOpp.Interest_Stopped_From__c}"/></apex:outputText></div>
         <div class="dsh-sub">{!dshOpp.Interest_Stop_Reason__c}</div>
     </div>
     </apex:outputPanel>
