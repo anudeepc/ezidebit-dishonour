@@ -317,4 +317,59 @@ private class EzidebitDishonourServiceTest {
         System.abortJob(jobId); // don't let stopTest run it: one executeBatch per test, many territories
         Test.stopTest();
     }
+
+    @isTest
+    static void retryRecordedBeforeItsOriginal_isRelinkedAndFirstDefaultMoves() {
+        Opportunity opp = anyCreditContract();
+        String ref = opp == null ? 'REF-LATE-ORIG' : opp.Contract_No__c;
+        Date d1 = wednesday();
+        // The retry arrives first (e.g. go-live): recorded as a missed instalment.
+        EzidebitDishonourService.capture(new List<EzidebitAPI.Payment>{ pay('T-RL2', 'D', ref, d1.addDays(6), 48.21, 2.75, 'SCHEDULED') }, null);
+        Test.startTest();
+        EzidebitDishonourService.Result r = EzidebitDishonourService.capture(new List<EzidebitAPI.Payment>{ pay('T-RL1', 'D', ref, d1, 48.21, 2.75, 'SCHEDULED') }, null);
+        Test.stopTest();
+        System.assertEquals(1, r.relinked);
+        Map<String, Ezidebit_Dishonour__c> d = byPaymentId(new Set<String>{ 'T-RL1', 'T-RL2' });
+        System.assertEquals('Automatic retry', d.get('T-RL2').Type__c);
+        System.assertEquals(d.get('T-RL1').Id, d.get('T-RL2').Original_Dishonour__c);
+        System.assertEquals(null, d.get('T-RL2').Outcome__c);
+        if (opp != null) {
+            System.assertEquals(false, d.get('T-RL2').First_Default__c, 'the retry is not the first default');
+            System.assert(d.get('T-RL1').First_Default__c, 'the real first failure is');
+        }
+    }
+
+    @isTest
+    static void relinkBatch_repairsExistingRecords() {
+        Date d1 = wednesday();
+        List<Ezidebit_Dishonour__c> rows = new List<Ezidebit_Dishonour__c>{
+            new Ezidebit_Dishonour__c(Ezidebit_Payment_ID__c = 'T-RB1', Contract_Reference__c = 'REF-RB', Debit_Date__c = d1,
+                Payment_Amount__c = 20, Type__c = 'Instalment', Outcome__c = 'Open', Status__c = 'D'),
+            new Ezidebit_Dishonour__c(Ezidebit_Payment_ID__c = 'T-RB2', Contract_Reference__c = 'REF-RB', Debit_Date__c = d1.addDays(6),
+                Payment_Amount__c = 20, Type__c = 'Instalment', Outcome__c = 'Open', Status__c = 'D'),
+            new Ezidebit_Dishonour__c(Ezidebit_Payment_ID__c = 'T-RB3', Contract_Reference__c = 'REF-RB', Debit_Date__c = d1.addDays(14),
+                Payment_Amount__c = 20, Type__c = 'Instalment', Outcome__c = 'Open', Status__c = 'D')
+        };
+        insert rows;
+        EzidebitDishonourRelinkBatch b = new EzidebitDishonourRelinkBatch();
+        Test.startTest();
+        b.execute(null, rows);
+        b.finish(null);
+        Test.stopTest();
+        System.assertNotEquals(null, b.start(null));
+        Map<String, Ezidebit_Dishonour__c> d = byPaymentId(new Set<String>{ 'T-RB1', 'T-RB2', 'T-RB3' });
+        System.assertEquals('Automatic retry', d.get('T-RB2').Type__c);
+        System.assertEquals('Instalment', d.get('T-RB3').Type__c, 'the next fortnight is a new instalment, not a retry of the retry');
+        System.assertEquals(1, b.relinked);
+    }
+
+    @isTest
+    static void recoveryBatch_canIncludeLiveRecords() {
+        EzidebitDishonourRecoveryBatch b = new EzidebitDishonourRecoveryBatch(true);
+        System.assertNotEquals(null, b.start(null));
+        Test.startTest();
+        b.execute(null, new List<Ezidebit_Dishonour__c>());
+        b.finish(null);
+        Test.stopTest();
+    }
 }

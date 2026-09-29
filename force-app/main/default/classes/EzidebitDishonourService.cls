@@ -57,6 +57,7 @@ public without sharing class EzidebitDishonourService {
         public Integer wouldInsert = 0;          // dry run: new records that would be created
         public Decimal ezidebitFees = 0;         // dry run: Ezidebit fees on those records
         public Integer skippedInactive = 0;
+        public Integer relinked = 0;             // retries recorded before their original, now linked
         public Set<Id> newlyRecordedOpportunityIds = new Set<Id>();
     }
 
@@ -239,7 +240,101 @@ public without sharing class EzidebitDishonourService {
         }
         res.inserted += save(secondPass, true);
         res.updated = save(toUpdate, false);
+        List<Ezidebit_Dishonour__c> newInstalments = new List<Ezidebit_Dishonour__c>();
+        for (Ezidebit_Dishonour__c d : firstPass) {
+            if (d.Id != null && d.Type__c == TYPE_INSTALMENT) {
+                newInstalments.add(d);
+            }
+        }
+        res.relinked = relinkLaterRetries(newInstalments);
         return res;
+    }
+
+    /**
+     * A failure can reach Salesforce after its own retry did (at go-live, or when the catch-up finds a
+     * missed day): the retry was then recorded as a missed instalment. For each instalment just
+     * recorded, a later instalment of the same contract and amount within the retry window is really
+     * its retry: relink it, and move the first-default flag back to the real first failure.
+     */
+    public static Integer relinkLaterRetries(List<Ezidebit_Dishonour__c> instalments) {
+        if (instalments == null || instalments.isEmpty()) {
+            return 0;
+        }
+        // Only records that are still missed instalments now (a repair run passes a stale snapshot).
+        Set<Id> candidateIds = new Set<Id>();
+        for (Ezidebit_Dishonour__c d : instalments) {
+            if (d.Id != null) {
+                candidateIds.add(d.Id);
+            }
+        }
+        instalments = [
+            SELECT Id, Contract_Reference__c, Debit_Date__c, Payment_Amount__c, Is_Backfill__c
+            FROM Ezidebit_Dishonour__c WHERE Id IN :candidateIds AND Type__c = :TYPE_INSTALMENT
+            ORDER BY Debit_Date__c ASC
+        ];
+        Set<String> refs = new Set<String>();
+        Date minDebit = null;
+        Date maxDebit = null;
+        for (Ezidebit_Dishonour__c d : instalments) {
+            if (d.Id == null || d.Debit_Date__c == null || String.isBlank(d.Contract_Reference__c)) {
+                continue;
+            }
+            refs.add(d.Contract_Reference__c);
+            minDebit = minDebit == null || d.Debit_Date__c < minDebit ? d.Debit_Date__c : minDebit;
+            maxDebit = maxDebit == null || d.Debit_Date__c > maxDebit ? d.Debit_Date__c : maxDebit;
+        }
+        if (refs.isEmpty()) {
+            return 0;
+        }
+        Date until = maxDebit.addDays(RETRY_WINDOW_DAYS);
+        Map<String, List<Ezidebit_Dishonour__c>> laterByRef = new Map<String, List<Ezidebit_Dishonour__c>>();
+        for (Ezidebit_Dishonour__c d : [
+            SELECT Id, Contract_Reference__c, Debit_Date__c, Payment_Amount__c, First_Default__c, Form_11A_Sent_Date__c
+            FROM Ezidebit_Dishonour__c
+            WHERE Contract_Reference__c IN :refs AND Type__c = :TYPE_INSTALMENT AND Original_Dishonour__c = null
+              AND Debit_Date__c > :minDebit AND Debit_Date__c <= :until
+            ORDER BY Debit_Date__c ASC
+        ]) {
+            if (!laterByRef.containsKey(d.Contract_Reference__c)) {
+                laterByRef.put(d.Contract_Reference__c, new List<Ezidebit_Dishonour__c>());
+            }
+            laterByRef.get(d.Contract_Reference__c).add(d);
+        }
+        Map<Id, Ezidebit_Dishonour__c> updates = new Map<Id, Ezidebit_Dishonour__c>();
+        for (Ezidebit_Dishonour__c original : instalments) {
+            List<Ezidebit_Dishonour__c> later = laterByRef.get(original.Contract_Reference__c);
+            if (later == null) {
+                continue;
+            }
+            if (updates.containsKey(original.Id) && updates.get(original.Id).Type__c == TYPE_RETRY) {
+                continue; // became a retry earlier in this run
+            }
+            for (Ezidebit_Dishonour__c l : later) {
+                if (updates.containsKey(l.Id) || !withinRetryWindow(original.Debit_Date__c, l.Debit_Date__c)
+                        || !sameAmount(original.Payment_Amount__c, l.Payment_Amount__c)) {
+                    continue;
+                }
+                Ezidebit_Dishonour__c retry = new Ezidebit_Dishonour__c(Id = l.Id, Type__c = TYPE_RETRY,
+                    Original_Dishonour__c = original.Id, Outcome__c = null);
+                if (l.First_Default__c && l.Form_11A_Sent_Date__c == null) {
+                    retry.First_Default__c = false;
+                    Ezidebit_Dishonour__c first = updates.containsKey(original.Id) ? updates.get(original.Id) : new Ezidebit_Dishonour__c(Id = original.Id);
+                    first.First_Default__c = true;
+                    first.Is_Backfill__c = false; // the notice for this default is still live
+                    updates.put(original.Id, first);
+                }
+                updates.put(l.Id, retry);
+                break; // one retry per instalment
+            }
+        }
+        save(updates.values(), false);
+        Integer relinked = 0;
+        for (Ezidebit_Dishonour__c u : updates.values()) {
+            if (u.Type__c == TYPE_RETRY) {
+                relinked++;
+            }
+        }
+        return relinked;
     }
 
     /**
