@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Fee_Interest_Adjustment__c</fullName>
+    <description>Interest taken off for the days before a fee charged inside this period was charged (a fee attracts interest only from the day it is charged). Negative or zero; set by PaymentUtil (InterestPeriodRules). Added in by Interest_Amount__c and Unpaid_Interest_Amount__c. Blank on payments processed before 30 Sep 2026.</description>
+    <label>Fee Interest Adjustment</label>
+    <precision>12</precision>
+    <required>false</required>
+    <scale>2</scale>
+    <type>Currency</type>
+</CustomField>

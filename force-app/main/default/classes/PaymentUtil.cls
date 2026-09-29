@@ -446,7 +446,7 @@ public with sharing class PaymentUtil {
         system.debug('identifiers: '+identifiers);
         Map<String, Opportunity> result = new Map<String, Opportunity>();
         List<Opportunity> allCreditContracts = [select id,name,Contract_No__c,Start_Date__c,Last_Payment_Received_Date__c,Last_Payment_Upload_Date_Rollup__c,Total_Loan_Balance_Amount__c,Scheduled_Amount__c,
-                                                Payment_Frequency_Number__c,NextAvailableScheduledDate__c,Account.Territory_Number__r.State_Master_State__c,Daily_Interest_Rate__c,Ezidebit_Starting_Date__c,Is_in_Hardship__c,Payment_On_Hold_End_Date__c,Unpaid_Interest_Amount__c,Interest_Stopped_From__c,Interest_Start_Date__c
+                                                Payment_Frequency_Number__c,NextAvailableScheduledDate__c,Account.Territory_Number__r.State_Master_State__c,Daily_Interest_Rate__c,Ezidebit_Starting_Date__c,Is_in_Hardship__c,Payment_On_Hold_End_Date__c,Unpaid_Interest_Amount__c,Interest_Stopped_From__c
                                                 from Opportunity where (Contract_No__c in: identifiers or id in:identifiers)  and Is_Credit_Contract__c=true];
         
         for(Opportunity opp: allCreditContracts)
@@ -464,6 +464,21 @@ public with sharing class PaymentUtil {
         List<Scheduled_Payment__c> spsToInsert = new List<Scheduled_Payment__c>();
         List<Scheduled_Payment__c> alreadyInsertedSps = new List<Scheduled_Payment__c>();
         List<Payment__c> morePaymentsDoneToday = new List<Payment__c>();
+        // Stage history (delivery) for agreements not yet paid, and the fees that fall inside this
+        // run's periods: see InterestPeriodRules.
+        Set<Id> unpaidOppIds = new Set<Id>();
+        Set<Id> allOppIds = new Set<Id>();
+        Date feesSince = null;
+        for (Opportunity o : mapCreditContract.values()) {
+            allOppIds.add(o.Id);
+            if (o.Last_Payment_Received_Date__c == null)
+                unpaidOppIds.add(o.Id);
+            Date from_x = o.Last_Payment_Received_Date__c != null ? o.Last_Payment_Received_Date__c : o.Start_Date__c;
+            if (from_x != null && (feesSince == null || from_x < feesSince))
+                feesSince = from_x;
+        }
+        Map<Id, List<InterestPeriodRules.StageEvent>> stageHistory = InterestPeriodRules.stageHistory(unpaidOppIds);
+        Map<Id, List<InterestPeriodRules.FeeCharge>> feesByOpp = InterestPeriodRules.fees(allOppIds, feesSince == null ? Date.today().addYears(-5) : feesSince.addDays(-1));
         for (Payment__c payment :payments) {
             if(!mapCreditContract.IsEmpty() && mapCreditContract.get(payment.ContractNo__c)!=null)
             {
@@ -507,29 +522,29 @@ public with sharing class PaymentUtil {
                 // the contract calculates interest daily on the unpaid daily balance (cl 7.6, NCC s 28).
                 // It used to run from the Ezidebit start date + 5 days with a minimum of one payment
                 // period, which overcharged every first payment made within the first period.
-                // Until Compliance decides on delayed deliveries, a first payment is never charged
-                // more days than that old rule gave (a late first payment was charged from the
-                // Ezidebit start, not the start date), so the lower of the two is used.
-                // Interest starts on delivery when EzidebitStatusWatch saw the customer go from on hold to
-                // active before this first payment (Interest_Start_Date__c); otherwise on the start date.
-                Date agreementStartDate = mapCreditContract.get(payment.ContractNo__c).Interest_Start_Date__c != null
-                    ? mapCreditContract.get(payment.ContractNo__c).Interest_Start_Date__c
-                    : mapCreditContract.get(payment.ContractNo__c).Start_Date__c;
+                // The first period starts at delivery when the agreement went from Pending Order back to
+                // Goods Delivered before this payment, otherwise at signing (InterestPeriodRules rule 1).
+                // The Ezidebit start date is no longer used: collections moves it when debits fail.
+                Opportunity creditContract = mapCreditContract.get(payment.ContractNo__c);
+                Date agreementStartDate = InterestPeriodRules.firstPeriodStart(creditContract.Start_Date__c,
+                    stageHistory.containsKey(creditContract.Id) ? stageHistory.get(creditContract.Id) : new List<InterestPeriodRules.StageEvent>(),
+                    paymentDate);
                 Integer paymentFrequencyNumber;
                 if(lastpaymentUploadDate!=null)
                     paymentFrequencyNumber = Integer.valueOf(lastpaymentUploadDate.daysBetween(paymentDate));
-                else
-                {
-                    Integer oldRuleFirstPaymentDays = (firstExpectedPaymentDate!=null && firstExpectedPaymentDate.daysBetween(paymentDate) >  mapCreditContract.get(payment.ContractNo__c).Payment_Frequency_Number__c) ? Integer.valueOf(firstExpectedPaymentDate.daysBetween(paymentDate)) :  Integer.valueOf(mapCreditContract.get(payment.ContractNo__c).Payment_Frequency_Number__c);
-                    if(agreementStartDate==null)
-                        paymentFrequencyNumber = oldRuleFirstPaymentDays;
-                    else if(oldRuleFirstPaymentDays==null)
-                        paymentFrequencyNumber = Math.max(0, agreementStartDate.daysBetween(paymentDate));
-                    else
-                        paymentFrequencyNumber = Math.min(Math.max(0, agreementStartDate.daysBetween(paymentDate)), oldRuleFirstPaymentDays);
-                }
+                else if(agreementStartDate!=null)
+                    paymentFrequencyNumber = Math.max(0, agreementStartDate.daysBetween(paymentDate));
+                else // no start date at all: the old rule
+                    paymentFrequencyNumber = (firstExpectedPaymentDate!=null && firstExpectedPaymentDate.daysBetween(paymentDate) >  creditContract.Payment_Frequency_Number__c) ? Integer.valueOf(firstExpectedPaymentDate.daysBetween(paymentDate)) :  Integer.valueOf(creditContract.Payment_Frequency_Number__c);
                 system.debug('##lastpaymentUploadDate: '+lastpaymentUploadDate+' paymentDate: '+paymentDate+' paymentFrequencyNumber: '+paymentFrequencyNumber+' startDate: '+mapCreditContract.get(payment.ContractNo__c).Start_Date__c);
                 scheduledPayment.Payment_Frequency_Number__c =  paymentFrequencyNumber;
+                // Balance as at the payment date, and fees counted only from the day they were charged
+                // (InterestPeriodRules rules 2 and 3).
+                List<InterestPeriodRules.FeeCharge> periodFees = feesByOpp.containsKey(creditContract.Id) ? feesByOpp.get(creditContract.Id) : new List<InterestPeriodRules.FeeCharge>();
+                Decimal balanceAtPayment = InterestPeriodRules.balanceAtPaymentDate(creditContract.Total_Loan_Balance_Amount__c, periodFees, paymentDate);
+                scheduledPayment.Loan_Balance_Amount__c = balanceAtPayment;
+                scheduledPayment.Fee_Interest_Adjustment__c = InterestPeriodRules.feeInterestAdjustment(periodFees,
+                    paymentDate.addDays(-paymentFrequencyNumber), paymentDate, creditContract.Daily_Interest_Rate__c);
                 // Interest stopped on this agreement (InterestStop page, Compliance-approved): a payment made on or
                 // after the stop date carries no interest, including the period in which it stopped (in the
                 // customer's favour). The recalculation jobs respect Exclude_Interest__c, so they keep it.

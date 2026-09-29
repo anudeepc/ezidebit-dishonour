@@ -716,11 +716,13 @@ private class PaymentUtilTests {
     insert payments;
   }
 
-  // Delivered after signing: interest on the first payment runs from the Interest Start Date (goods delivered).
-  static testMethod void testFirstPaymentChargedFromInterestStartDate() {
+  // Delivered after signing (Pending Order back to Goods Delivered before the first payment): interest on the
+  // first payment runs from the delivery day, not from signing.
+  static testMethod void testFirstPaymentChargedFromDelivery() {
     createTestData();
-    update new Opportunity(Id = contract3.Id, Interest_Start_Date__c = Date.today().addDays(10));
-    Payment_File__c paymentFile = new Payment_File__c(File_Name__c = 'Unit Test interest start', File_Upload_Date__c = datetime.now());
+    update new Opportunity(Id = contract3.Id, StageName = 'Pending Order');
+    update new Opportunity(Id = contract3.Id, StageName = 'Goods Delivered');
+    Payment_File__c paymentFile = new Payment_File__c(File_Name__c = 'Unit Test delivery', File_Upload_Date__c = datetime.now());
     insert paymentFile;
     Test.startTest();
     insert new Payment__c(
@@ -741,7 +743,7 @@ private class PaymentUtilTests {
     Test.stopTest();
     List<Scheduled_Payment__c> sps = [SELECT Payment_Frequency_Number__c FROM Scheduled_Payment__c WHERE Opportunity__c = :contract3.Id ORDER BY CreatedDate DESC LIMIT 1];
     if (!sps.isEmpty()) {
-      System.assert(sps[0].Payment_Frequency_Number__c <= 4, 'no more than the 4 days since delivery: ' + sps[0].Payment_Frequency_Number__c);
+      System.assert(sps[0].Payment_Frequency_Number__c <= 14, 'no more than the 14 days since delivery: ' + sps[0].Payment_Frequency_Number__c);
     }
   }
 

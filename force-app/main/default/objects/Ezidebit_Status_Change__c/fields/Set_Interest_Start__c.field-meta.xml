@@ -1,8 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
-    <fullName>Set_Interest_Start__c</fullName>
-    <description>This change (on hold to active before the first payment) set the agreement Interest Start Date.</description>
-    <label>Set Interest Start</label>
-    <defaultValue>false</defaultValue>
-    <type>Checkbox</type>
-</CustomField>
