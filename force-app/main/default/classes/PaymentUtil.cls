@@ -446,7 +446,7 @@ public with sharing class PaymentUtil {
         system.debug('identifiers: '+identifiers);
         Map<String, Opportunity> result = new Map<String, Opportunity>();
         List<Opportunity> allCreditContracts = [select id,name,Contract_No__c,Start_Date__c,Last_Payment_Received_Date__c,Last_Payment_Upload_Date_Rollup__c,Total_Loan_Balance_Amount__c,Scheduled_Amount__c,
-                                                Payment_Frequency_Number__c,NextAvailableScheduledDate__c,Account.Territory_Number__r.State_Master_State__c,Daily_Interest_Rate__c,Ezidebit_Starting_Date__c,Is_in_Hardship__c,Payment_On_Hold_End_Date__c,Unpaid_Interest_Amount__c
+                                                Payment_Frequency_Number__c,NextAvailableScheduledDate__c,Account.Territory_Number__r.State_Master_State__c,Daily_Interest_Rate__c,Ezidebit_Starting_Date__c,Is_in_Hardship__c,Payment_On_Hold_End_Date__c,Unpaid_Interest_Amount__c,Interest_Stopped_From__c
                                                 from Opportunity where (Contract_No__c in: identifiers or id in:identifiers)  and Is_Credit_Contract__c=true];
         
         for(Opportunity opp: allCreditContracts)
@@ -526,6 +526,12 @@ public with sharing class PaymentUtil {
                 }
                 system.debug('##lastpaymentUploadDate: '+lastpaymentUploadDate+' paymentDate: '+paymentDate+' paymentFrequencyNumber: '+paymentFrequencyNumber+' startDate: '+mapCreditContract.get(payment.ContractNo__c).Start_Date__c);
                 scheduledPayment.Payment_Frequency_Number__c =  paymentFrequencyNumber;
+                // Interest stopped on this agreement (InterestStop page, Compliance-approved): a payment made on or
+                // after the stop date carries no interest, including the period in which it stopped (in the
+                // customer's favour). The recalculation jobs respect Exclude_Interest__c, so they keep it.
+                Date interestStoppedFrom = mapCreditContract.get(payment.ContractNo__c).Interest_Stopped_From__c;
+                if(interestStoppedFrom!=null && paymentDate>=interestStoppedFrom)
+                    scheduledPayment.Exclude_Interest__c = true;
                 // A first payment made on the start date closes a 0-day period but still needs
                 // its own scheduled payment: there is no earlier one to allocate it to.
                 if(paymentFrequencyNumber>0 || lastpaymentUploadDate==null)
