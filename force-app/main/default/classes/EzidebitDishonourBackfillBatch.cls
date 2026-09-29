@@ -1,5 +1,5 @@
 /**
- * Loads Ezidebit failure history into Ezidebit_Dishonour__c for ACTIVE agreements, oldest first:
+ * Loads Ezidebit failure history into Ezidebit_Dishonour__c for ACTIVE CREDIT CONTRACTS only (leases are left out), oldest first:
  * one territory and one WINDOW_DAYS window per execute, so each GetPayments response stays well
  * under the 6 MB limit and retries find the originals loaded before them.
  *
@@ -88,7 +88,7 @@ public without sharing class EzidebitDishonourBackfillBatch implements Database.
         String body = (dryRun ? 'DRY RUN - nothing was written.\n' : 'Records written.\n')
             + 'Window: ' + String.valueOf(fromDate) + ' to ' + String.valueOf(toDate) + '\n'
             + (dryRun ? 'Dishonours that would be recorded: ' : 'Dishonours recorded: ') + inserted + '\n'
-            + 'Failures skipped (agreement not active or not found): ' + skippedInactive + '\n\nBy month (count, Ezidebit fees):\n';
+            + 'Failures skipped (not an active credit contract, e.g. a lease): ' + skippedInactive + '\n\nBy month (count, Ezidebit fees):\n';
         for (String m : months) {
             body += m + '  ' + countByMonth.get(m) + (dryRun ? '  $' + feesByMonth.get(m).setScale(2) : '') + '\n';
         }

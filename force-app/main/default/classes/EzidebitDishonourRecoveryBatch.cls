@@ -24,7 +24,7 @@ public without sharing class EzidebitDishonourRecoveryBatch implements Database.
             FROM Ezidebit_Dishonour__c
             WHERE Is_Backfill__c IN :backfillValues
               AND Type__c = :EzidebitDishonourService.TYPE_INSTALMENT
-              AND Outcome__c = :EzidebitDishonourService.OUTCOME_OPEN AND Opportunity__c != null
+              AND Outcome__c = :EzidebitDishonourService.OUTCOME_OPEN AND Opportunity__r.Is_Credit_Contract__c = true
             ORDER BY Opportunity__c, Debit_Date__c
         ]);
     }

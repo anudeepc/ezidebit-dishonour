@@ -46,7 +46,7 @@ public without sharing class EzidebitDishonourService {
     /** How a capture run records failures. Live runs use the defaults. */
     public class CaptureOptions {
         public Boolean backfill = false;      // history load: marked Is_Backfill__c, never a first default
-        public Boolean activeOnly = false;    // only agreements that are still active
+        public Boolean activeOnly = false;    // only active credit contracts (history load: leases are left out)
         public Boolean dryRun = false;        // count only, write nothing
     }
 
@@ -109,7 +109,7 @@ public without sharing class EzidebitDishonourService {
             existing.put(d.Ezidebit_Payment_ID__c, d);
         }
         Map<String, Opportunity> oppByRef = new Map<String, Opportunity>();
-        for (Opportunity o : [SELECT Id, AccountId, Contract_No__c, MP1__c, Is_Active__c FROM Opportunity WHERE Contract_No__c IN :refs]) {
+        for (Opportunity o : [SELECT Id, AccountId, Contract_No__c, MP1__c, Is_Active__c, Is_Credit_Contract__c FROM Opportunity WHERE Contract_No__c IN :refs]) {
             oppByRef.put(o.Contract_No__c, o);
         }
         Map<String, Account> acctByRef = new Map<String, Account>();
@@ -160,7 +160,7 @@ public without sharing class EzidebitDishonourService {
                 continue;
             }
             Opportunity opp = oppByRef.get(p.YourSystemReference);
-            if (opts.activeOnly && (opp == null || !opp.Is_Active__c)) {
+            if (opts.activeOnly && (opp == null || !opp.Is_Active__c || !opp.Is_Credit_Contract__c)) {
                 res.skippedInactive++;
                 continue;
             }
@@ -208,7 +208,7 @@ public without sharing class EzidebitDishonourService {
                     openByRef.get(p.YourSystemReference).add(d);
                 }
             }
-            if (!opts.backfill && opp != null && d.Is_Scheduled_Debit__c && DEFAULT_TYPES.contains(d.Type__c)
+            if (!opts.backfill && opp != null && opp.Is_Credit_Contract__c && d.Is_Scheduled_Debit__c && DEFAULT_TYPES.contains(d.Type__c)
                     && opp.MP1__c == null && !oppsWithFirstDefault.contains(opp.Id)) {
                 d.First_Default__c = true;
                 oppsWithFirstDefault.add(opp.Id);

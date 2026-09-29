@@ -149,6 +149,8 @@ private class EzidebitDishonourServiceTest {
         }
         Payment__c taken = pays[0];
         String ref = taken.Agreement__r.Contract_No__c;
+        // Production keeps the late-return flag switched off at org level until Finance decides; this test turns it on for itself.
+        insert new Ezidebit_Sync_Settings__c(SetupOwnerId = UserInfo.getUserId(), Disable_Late_Return_Flag__c = false);
         // An open instalment that this payment appeared to recover, 4 business days earlier.
         Date original = taken.Payment_Date__c.addDays(-6);
         EzidebitDishonourService.capture(new List<EzidebitAPI.Payment>{ pay('T-LR-ORIG', 'D', ref, original, taken.Actual_Amount__c, 2.75, 'SCHEDULED') }, null);

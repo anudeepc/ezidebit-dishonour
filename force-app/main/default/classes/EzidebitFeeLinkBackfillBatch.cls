@@ -10,7 +10,7 @@ public without sharing class EzidebitFeeLinkBackfillBatch implements Database.Ba
             SELECT Id, Agreement__c, Fee_Type__c, Fee_Amount__c, Fee_Charged_Date__c, Ezidebit_Dishonour__c
             FROM Fee__c
             WHERE Fee_Type__c = :EzidebitDishonourService.FEE_TYPE_DISHONOUR AND Ezidebit_Dishonour__c = null
-              AND Agreement__r.Is_Active__c = true
+              AND Agreement__r.Is_Active__c = true AND Agreement__r.Is_Credit_Contract__c = true
             ORDER BY Fee_Charged_Date__c ASC
         ]);
     }
