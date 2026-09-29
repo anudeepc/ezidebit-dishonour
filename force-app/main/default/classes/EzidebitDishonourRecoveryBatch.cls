@@ -18,6 +18,7 @@ public without sharing class EzidebitDishonourRecoveryBatch implements Database.
     }
 
     public Database.QueryLocator start(Database.BatchableContext bc) {
+        Integer rowLimit = Test.isRunningTest() ? 200 : 50000000; // a test may not open a locator over 10,000 rows
         Set<Boolean> backfillValues = includeLive ? new Set<Boolean>{ true, false } : new Set<Boolean>{ true };
         return Database.getQueryLocator([
             SELECT Id, Opportunity__c, Debit_Date__c, Payment_Amount__c
@@ -26,6 +27,7 @@ public without sharing class EzidebitDishonourRecoveryBatch implements Database.
               AND Type__c = :EzidebitDishonourService.TYPE_INSTALMENT
               AND Outcome__c = :EzidebitDishonourService.OUTCOME_OPEN AND Opportunity__r.Is_Credit_Contract__c = true
             ORDER BY Opportunity__c, Debit_Date__c
+            LIMIT :rowLimit
         ]);
     }
 

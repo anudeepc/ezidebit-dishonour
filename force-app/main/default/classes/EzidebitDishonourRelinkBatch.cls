@@ -10,10 +10,12 @@ public without sharing class EzidebitDishonourRelinkBatch implements Database.Ba
     @TestVisible Integer relinked = 0;
 
     public Database.QueryLocator start(Database.BatchableContext bc) {
+        Integer rowLimit = Test.isRunningTest() ? 200 : 50000000; // a test may not open a locator over 10,000 rows
         return Database.getQueryLocator([
             SELECT Id FROM Ezidebit_Dishonour__c
             WHERE Type__c = :EzidebitDishonourService.TYPE_INSTALMENT AND Contract_Reference__c != null
             ORDER BY Debit_Date__c ASC, Name ASC
+            LIMIT :rowLimit
         ]);
     }
 
