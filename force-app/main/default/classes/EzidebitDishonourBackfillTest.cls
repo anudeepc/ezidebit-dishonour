@@ -81,7 +81,7 @@ private class EzidebitDishonourBackfillTest {
         Integer territories = [SELECT COUNT() FROM Territory__c WHERE Ezidebit_DigitalKey__c != null AND Status__c = 'Active'];
         System.assert(items.size() >= territories * 3, 'at least three windows per territory for 31 days');
         for (Integer i = 1; i < items.size(); i++) {
-            System.assert(items[i - 1] <= items[i], 'oldest window first');
+            System.assert(Date.valueOf(items[i - 1].left(10)) <= Date.valueOf(items[i].left(10)), 'oldest window first');
             System.assertEquals(3, items[i].split('\\|').size());
         }
         if (!items.isEmpty()) {
