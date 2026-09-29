@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
     <fullName>Interest_Accrued_Since_Last_Payment__c</fullName>
-    <formula>(TODAY() - Last_Payment_Received_Date__c)* Daily_Interest_Rate__c * Total_Loan_Balance_Amount__c</formula>
+    <formula>IF(AND(NOT(ISBLANK(Interest_Stopped_From__c)), Interest_Stopped_From__c &lt;= TODAY()), 0, (TODAY() - Last_Payment_Received_Date__c)* Daily_Interest_Rate__c * Total_Loan_Balance_Amount__c)</formula>
+    <description>Interest accrued daily since the last payment; part of Final_Payout_Figure__c. Zero once interest is stopped (Interest_Stopped_From__c), matching PaymentUtil, which charges no interest for the period in which it stops.</description>
     <formulaTreatBlanksAs>BlankAsZero</formulaTreatBlanksAs>
     <label>Interest Accrued Since Last Payment</label>
     <precision>18</precision>
