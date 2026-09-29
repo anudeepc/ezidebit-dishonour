@@ -159,4 +159,45 @@ private class CollectionDishonourPanelTest {
         System.assertNotEquals(null, p.dshRetryStatus);
         System.assert(p.dshCount >= 0);
     }
+
+    @isTest
+    static void hardshipStatus_openOverdueAndAgreed() {
+        CollectionDishonourPanel p = new CollectionDishonourPanel(new ApexPages.StandardController(new Collection_Activity__c()));
+        Hardship_Request__c open = (Hardship_Request__c) JSON.deserialize(JSON.serialize(new Map<String, Object>{
+            'attributes' => new Map<String, Object>{ 'type' => 'Hardship_Request__c' },
+            'Status__c' => 'Assessing', 'Is_Open__c' => true, 'Decision_Due_Date__c' => '2026-10-02' }), Hardship_Request__c.class);
+        p.hardshipStatus(new List<Hardship_Request__c>{ open }, TODAY);
+        System.assertEquals('danger', p.dshHardshipTone, '2 days to the decision deadline');
+        System.assert(p.dshHardshipStatus.startsWith('Assessing: decision due by'));
+        Hardship_Request__c agreed = new Hardship_Request__c(Status__c = 'Agreed', Agreed_Change__c = 'Payments paused', Change_End_Date__c = TODAY.addDays(30));
+        p.hardshipStatus(new List<Hardship_Request__c>{ agreed }, TODAY);
+        System.assertEquals('success', p.dshHardshipTone);
+        System.assert(p.dshHardshipStatus.startsWith('Agreed payments paused'));
+        p.hardshipStatus(new List<Hardship_Request__c>(), TODAY);
+        System.assertEquals(null, p.dshHardshipStatus);
+    }
+
+    @isTest
+    static void tools_andStatementEmail() {
+        List<Collection_Activity__c> cas = [SELECT Id, Agreement__c FROM Collection_Activity__c
+                                            WHERE Agreement__r.Is_Credit_Contract__c = true ORDER BY CreatedDate DESC LIMIT 1];
+        if (cas.isEmpty()) {
+            return;
+        }
+        CollectionDishonourPanel p = new CollectionDishonourPanel(new ApexPages.StandardController(cas[0]));
+        System.assertNotEquals(null, p.dshOpp);
+        System.assert(p.dshPayoutStatementUrl.contains('EarlyPayoutFigureStatement'));
+        System.assert(p.dshNewHardshipUrl.contains('Hardship_Request__c/new'));
+        Test.setCurrentPage(Page.CollectionActivityCreditContractPage);
+        Test.startTest();
+        p.dshSendStatement();
+        Test.stopTest();
+        System.assertEquals(Date.today(), [SELECT Customer_Statement_Sent_Date__c FROM Opportunity WHERE Id = :cas[0].Agreement__c].Customer_Statement_Sent_Date__c);
+        System.assertEquals(1, [SELECT COUNT() FROM Attachment WHERE ParentId = :cas[0].Agreement__c AND Name LIKE 'Agreement Statement_%' AND CreatedDate = TODAY]);
+        Opportunity o = new Opportunity(Name = '3000 - Fridge', Contract_No__c = '30000000001');
+        o.Account = new Account(FirstName = 'Jo');
+        String body = CollectionDishonourPanel.statementEmailBody(o);
+        System.assert(body.contains('Dear Jo,'));
+        System.assert(body.contains('30000000001 (Fridge)'));
+    }
 }

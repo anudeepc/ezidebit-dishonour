@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<PermissionSet xmlns="http://soap.sforce.com/2006/04/metadata">
+    <customPermissions>
+        <enabled>true</enabled>
+        <name>Stop_Interest</name>
+    </customPermissions>
+    <description>Can stop or restart interest on a credit contract (Stop interest page). Give only to people Compliance and Finance have approved.</description>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>Opportunity.Interest_Stop_Approved_By__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>Opportunity.Interest_Stop_Notes__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>Opportunity.Interest_Stop_Reason__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>Opportunity.Interest_Stopped_From__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <hasActivationRequired>false</hasActivationRequired>
+    <label>Interest Stop Approver</label>
+    <pageAccesses>
+        <apexPage>InterestStop</apexPage>
+        <enabled>true</enabled>
+    </pageAccesses>
+</PermissionSet>

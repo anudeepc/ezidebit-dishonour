@@ -16,13 +16,20 @@ public without sharing class ArrangementTracker {
     public static final String NOT_STARTED = 'Not started';
 
     public class Status {
-        public String status;
-        public Decimal expected = 0;
-        public Decimal paid = 0;
-        public Decimal shortfall = 0;
-        public Integer duesPassed = 0;
-        public Date nextDue;
-        public String summary;
+        public String status { get; set; }
+        public Decimal expected { get; set; }
+        public Decimal paid { get; set; }
+        public Decimal shortfall { get; set; }
+        public Integer duesPassed { get; set; }
+        public Date nextDue { get; set; }
+        public String summary { get; set; }
+
+        public Status() {
+            expected = 0;
+            paid = 0;
+            shortfall = 0;
+            duesPassed = 0;
+        }
     }
 
     public static Status evaluate(Opportunity opp, List<Payment__c> payments, Date today) {

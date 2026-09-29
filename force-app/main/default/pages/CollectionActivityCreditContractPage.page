@@ -133,6 +133,39 @@
     </div>
 </div>
 </apex:outputPanel>
+<div class="d-flex flex-wrap" style="margin-top:6px;border-top:1px solid rgba(0,0,0,.08);padding-top:6px;">
+    <apex:outputPanel layout="none" rendered="{!dshHardshipStatus != null}">
+    <div class="dsh-tile">
+        <div class="dsh-label">Hardship request</div>
+        <div class="dsh-value dsh-text-{!dshHardshipTone}">{!dshHardshipStatus}</div>
+        <div class="dsh-sub">Collections contact is on hold while a request is open (IDR)</div>
+    </div>
+    </apex:outputPanel>
+    <apex:outputPanel layout="none" rendered="{!dshArrangement != null}">
+    <div class="dsh-tile">
+        <div class="dsh-label">Payment arrangement</div>
+        <div class="dsh-value dsh-text-{!dshArrangementTone}">{!dshArrangement.status}<apex:outputText rendered="{!dshArrangement.shortfall > 0}">&nbsp;&middot;&nbsp;<apex:outputText value="{0,number,currency}"><apex:param value="{!dshArrangement.shortfall}"/></apex:outputText> behind</apex:outputText></div>
+        <div class="dsh-sub">{!dshArrangement.summary}</div>
+    </div>
+    </apex:outputPanel>
+    <apex:outputPanel layout="none" rendered="{!dshOpp.Interest_Stopped_From__c != null}">
+    <div class="dsh-tile">
+        <div class="dsh-label">Interest</div>
+        <div class="dsh-value dsh-text-warning">Stopped from <apex:outputText value="{0,date,d MMM yyyy}"><apex:param value="{!dshOpp.Interest_Stopped_From__c}"/></apex:outputText></div>
+        <div class="dsh-sub">{!dshOpp.Interest_Stop_Reason__c}</div>
+    </div>
+    </apex:outputPanel>
+    <div class="dsh-tile ml-auto" style="align-self:center;">
+        <a class="btn btn-sm btn-outline-dark" href="{!dshPayoutStatementUrl}" target="_blank">Payout statement</a>
+        <a class="btn btn-sm btn-outline-dark" href="{!dshAgreementStatementUrl}" target="_blank">Agreement statement</a>
+        <apex:commandButton styleClass="btn btn-sm btn-outline-dark" value="Email statement" action="{!dshSendStatement}"
+            onclick="return confirm('Email the agreement statement to {!JSENCODE(IF(ISBLANK(dshOpp.Account.PersonEmail), 'nobody (no email on file: it will be saved for posting)', dshOpp.Account.PersonEmail))}?');"/>
+        <apex:outputPanel layout="none" rendered="{!dshHardshipAccess}">
+            <a class="btn btn-sm btn-outline-dark" href="{!dshNewHardshipUrl}" target="_blank">Log hardship request</a>
+        </apex:outputPanel>
+        <a class="btn btn-sm btn-outline-danger" href="/apex/InterestStop?oppId={!dshOpp.Id}" target="_blank">{!IF(dshOpp.Interest_Stopped_From__c != null, 'Interest stop', 'Stop interest')}</a>
+    </div>
+</div>
 </div>
 </apex:outputPanel>
 
@@ -321,6 +354,13 @@
   <div class="btn-group" style="margin: 5px;" role="group" aria-label="Second group">
     <button class="btn btn-sm {!IF(dshTone == 'danger', 'btn-danger', 'btn-info')}" type="button" data-toggle="collapse" data-target="#dishonoursRelatedList" aria-expanded="false" aria-controls="collapseExample" onclick="scrollToBottom();">
     Dishonours ({!dshCount})
+    </button>
+  </div>
+  </apex:outputPanel>
+  <apex:outputPanel layout="none" rendered="{!AND(dshHasAgreement, dshHardshipAccess)}">
+  <div class="btn-group" style="margin: 5px;" role="group" aria-label="Second group">
+    <button class="btn btn-sm {!IF(dshHardshipTone == 'danger', 'btn-danger', 'btn-info')}" type="button" data-toggle="collapse" data-target="#hardshipRelatedList" aria-expanded="false" aria-controls="collapseExample" onclick="scrollToBottom();">
+    Hardship ({!dshHardshipCount})
     </button>
   </div>
   </apex:outputPanel>
@@ -596,6 +636,38 @@
                         <td>{!d.Outcome__c}<apex:outputText rendered="{!d.Recovered_Date__c != null}">&nbsp;<apex:outputText value="{0,date,dd/MM}"><apex:param value="{!d.Recovered_Date__c}"/></apex:outputText></apex:outputText></td>
                         <td><apex:outputText value="{0,number,currency}"><apex:param value="{!d.Ezidebit_Fee__c}"/></apex:outputText></td>
                         <td><apex:outputText value="{0,number,currency}" rendered="{!d.Dishonour_Fee_Charged__c != null}"><apex:param value="{!d.Dishonour_Fee_Charged__c}"/></apex:outputText></td>
+                    </tr>
+                </apex:repeat>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="collapse" id="hardshipRelatedList" data-parent="#relatedListSection">
+    <div class="card card-body" style="height:400px;overflow:auto;">
+        <table class="table table-sm">
+            <thead class="bg-secondary text-center text-white">
+                <th colspan="7">Hardship requests (this customer)</th>
+            </thead>
+            <tbody>
+               <tr style="font-weight:bold;">
+                    <td>Request</td>
+                    <td>Agreement</td>
+                    <td>Received</td>
+                    <td>Status</td>
+                    <td>Decision due</td>
+                    <td>Decided</td>
+                    <td>Agreed change</td>
+                </tr>
+                <apex:repeat value="{!dshHardshipRows}" var="h">
+                    <tr class="{!IF(h.Decision_Overdue__c, 'table-danger', '')}">
+                        <td><a href="/{!h.Id}" target="_blank">{!h.Name}</a></td>
+                        <td>{!h.Opportunity__r.Contract_No__c}</td>
+                        <td><apex:outputText value="{0,date,dd/MM/yyyy}"><apex:param value="{!h.Received_Date__c}"/></apex:outputText></td>
+                        <td>{!h.Status__c}</td>
+                        <td><apex:outputText value="{0,date,dd/MM/yyyy}" rendered="{!h.Is_Open__c}"><apex:param value="{!h.Decision_Due_Date__c}"/></apex:outputText></td>
+                        <td><apex:outputText value="{0,date,dd/MM/yyyy}"><apex:param value="{!h.Decision_Date__c}"/></apex:outputText></td>
+                        <td>{!h.Agreed_Change__c}<apex:outputText rendered="{!h.Change_End_Date__c != null}"> until <apex:outputText value="{0,date,dd/MM/yyyy}"><apex:param value="{!h.Change_End_Date__c}"/></apex:outputText></apex:outputText></td>
                     </tr>
                 </apex:repeat>
             </tbody>
