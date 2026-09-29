@@ -6,10 +6,12 @@ private class InterestStopControllerTest {
         String u = 'interest.stop.' + (withPermission ? 'yes' : 'no') + '.' + Crypto.getRandomInteger() + '@r4k.test';
         User usr = new User(Alias = 'istop', Email = u, EmailEncodingKey = 'UTF-8', LastName = 'Stop', LanguageLocaleKey = 'en_US',
             LocaleSidKey = 'en_AU', ProfileId = p.Id, TimeZoneSidKey = 'Australia/Sydney', UserName = u);
-        insert usr;
-        if (withPermission) {
-            insert new PermissionSetAssignment(AssigneeId = usr.Id,
-                PermissionSetId = [SELECT Id FROM PermissionSet WHERE Name = 'Interest_Stop_Approver'].Id);
+        System.runAs(new User(Id = UserInfo.getUserId())) { // setup DML kept apart from record DML
+            insert usr;
+            if (withPermission) {
+                insert new PermissionSetAssignment(AssigneeId = usr.Id,
+                    PermissionSetId = [SELECT Id FROM PermissionSet WHERE Name = 'Interest_Stop_Approver'].Id);
+            }
         }
         return usr;
     }

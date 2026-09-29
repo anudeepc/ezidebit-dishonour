@@ -52,9 +52,12 @@ private class EzidebitPaymentHistoryControllerTest {
         User u = new User(Alias = 'ezstaff', Email = 'ezstaff@example.invalid', EmailEncodingKey = 'UTF-8', LastName = 'Staff',
             LanguageLocaleKey = 'en_US', LocaleSidKey = 'en_AU', ProfileId = admin.Id, TimeZoneSidKey = 'Australia/Sydney',
             UserName = 'ezstaff' + System.currentTimeMillis() + '@example.invalid');
-        insert u;
-        insert new PermissionSetAssignment(AssigneeId = u.Id,
-            PermissionSetId = [SELECT Id FROM PermissionSet WHERE Name = 'Ezidebit_Dishonour_Access' LIMIT 1].Id);
+        // Setup-object DML in its own runAs context, so it doesn't mix with the test's record DML.
+        System.runAs(new User(Id = UserInfo.getUserId())) {
+            insert u;
+            insert new PermissionSetAssignment(AssigneeId = u.Id,
+                PermissionSetId = [SELECT Id FROM PermissionSet WHERE Name = 'Ezidebit_Dishonour_Access' LIMIT 1].Id);
+        }
         return u;
     }
 
