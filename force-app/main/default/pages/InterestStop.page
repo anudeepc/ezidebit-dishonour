@@ -1,0 +1,39 @@
+<apex:page controller="InterestStopController" showHeader="false" standardStylesheets="false" title="Stop interest">
+<apex:stylesheet value="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"/>
+<div class="container" style="max-width:640px;margin-top:24px;font-size:14px;">
+<apex:form >
+    <h4>Stop interest</h4>
+    <apex:outputPanel rendered="{!opp == null}"><div class="alert alert-warning">Agreement not found.</div></apex:outputPanel>
+    <apex:outputPanel rendered="{!opp != null}">
+    <p><strong>{!opp.Contract_No__c}</strong> &middot; {!opp.Name}</p>
+    <p>From the date below, no interest is charged on this agreement: payments received after it carry no interest, and the payout
+       figure stops growing. Interest already charged before it is still owed. Use it only where Compliance has approved it
+       (for example an agreed hardship change, a deceased customer, or an AFCA complaint).</p>
+    <apex:pageMessages />
+    <apex:outputPanel rendered="{!!canStop}">
+        <div class="alert alert-secondary">You can see this but not change it: it needs the Stop Interest permission (Interest Stop Approver).</div>
+    </apex:outputPanel>
+    <div class="form-group">
+        <label>Interest stopped from</label>
+        <apex:inputField value="{!opp.Interest_Stopped_From__c}" styleClass="form-control"/>
+    </div>
+    <div class="form-group">
+        <label>Reason</label>
+        <apex:inputField value="{!opp.Interest_Stop_Reason__c}" styleClass="form-control"/>
+    </div>
+    <div class="form-group">
+        <label>Notes (what was approved, by whom, any reference)</label>
+        <apex:inputField value="{!opp.Interest_Stop_Notes__c}" styleClass="form-control"/>
+    </div>
+    <apex:outputPanel rendered="{!opp.Interest_Stop_Approved_By__c != null}">
+        <p class="text-muted">Last changed by {!opp.Interest_Stop_Approved_By__r.Name}.</p>
+    </apex:outputPanel>
+    <apex:commandButton value="Stop interest" action="{!save}" styleClass="btn btn-danger" rendered="{!canStop}"
+        onclick="return confirm('Stop interest on this agreement from the date shown?');"/>
+    &nbsp;
+    <apex:commandButton value="Restart interest" action="{!restart}" styleClass="btn btn-light" rendered="{!AND(canStop, opp.Interest_Stop_Reason__c != null)}"
+        onclick="return confirm('Restart interest? It will be charged again from the next payment.');"/>
+    </apex:outputPanel>
+</apex:form>
+</div>
+</apex:page>

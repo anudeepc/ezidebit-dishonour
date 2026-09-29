@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Information_Due_Date__c</fullName>
+    <description>The customer has 21 days to give the information (NCC s72(2)).</description>
+    <label>Information Due By</label>
+    <formula>Information_Requested_Date__c + 21</formula>
+    <formulaTreatBlanksAs>BlankAsZero</formulaTreatBlanksAs>
+    <type>Date</type>
+</CustomField>

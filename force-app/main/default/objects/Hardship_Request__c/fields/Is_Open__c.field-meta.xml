@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Is_Open__c</fullName>
+    <description></description>
+    <label>Open</label>
+    <formula>OR(ISPICKVAL(Status__c, &apos;Received&apos;), ISPICKVAL(Status__c, &apos;Information requested&apos;), ISPICKVAL(Status__c, &apos;Assessing&apos;))</formula>
+    <formulaTreatBlanksAs>BlankAsZero</formulaTreatBlanksAs>
+    <type>Checkbox</type>
+</CustomField>

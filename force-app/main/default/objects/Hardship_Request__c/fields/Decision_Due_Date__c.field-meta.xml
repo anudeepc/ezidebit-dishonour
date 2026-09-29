@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Decision_Due_Date__c</fullName>
+    <description>NCC s72(5): 21 days after the request; if information was asked for, 28 days after asking when none arrives, or 21 days after it arrives.</description>
+    <label>Decision Due By</label>
+    <formula>IF(ISBLANK(Information_Requested_Date__c), Received_Date__c + 21, IF(ISBLANK(Information_Received_Date__c), Information_Requested_Date__c + 28, Information_Received_Date__c + 21))</formula>
+    <formulaTreatBlanksAs>BlankAsZero</formulaTreatBlanksAs>
+    <type>Date</type>
+</CustomField>

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Information_Request_In_Time</fullName>
+    <active>true</active>
+    <errorConditionFormula>AND(NOT(ISBLANK(Information_Requested_Date__c)), Information_Requested_Date__c &gt; Received_Date__c + 21)</errorConditionFormula>
+    <errorDisplayField>Information_Requested_Date__c</errorDisplayField>
+    <errorMessage>Information can only be asked for within 21 days of receiving the request (NCC s72(2)).</errorMessage>
+</ValidationRule>

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Decision_Notice_Sent_Date__c</fullName>
+    <description>The written notice of the decision (NCC s72(4)).</description>
+    <label>Decision Notice Sent On</label>
+    <required>false</required>
+    <type>Date</type>
+</CustomField>

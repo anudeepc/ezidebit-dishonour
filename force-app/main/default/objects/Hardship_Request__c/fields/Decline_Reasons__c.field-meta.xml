@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Decline_Reasons__c</fullName>
+    <description>A decline notice must give the reasons, AFCA's contact details and the customer's rights with AFCA (NCC s72(4)(b)).</description>
+    <label>Reasons for Declining</label>
+    <length>32000</length>
+    <visibleLines>4</visibleLines>
+    <type>LongTextArea</type>
+</CustomField>

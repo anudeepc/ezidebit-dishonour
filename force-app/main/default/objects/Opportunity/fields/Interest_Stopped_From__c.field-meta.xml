@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Interest_Stopped_From__c</fullName>
+    <description>No interest is charged for any day from this date (PaymentUtil and the payout figure). Set only through the Stop interest page, by people with the Stop Interest permission.</description>
+    <label>Interest Stopped From</label>
+    <required>false</required>
+    <type>Date</type>
+</CustomField>

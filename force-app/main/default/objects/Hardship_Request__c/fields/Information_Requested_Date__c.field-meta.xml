@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Information_Requested_Date__c</fullName>
+    <description>Must be within 21 days of receiving the request (NCC s72(2)).</description>
+    <label>Information Requested On</label>
+    <required>false</required>
+    <type>Date</type>
+</CustomField>

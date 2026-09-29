@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomPermission xmlns="http://soap.sforce.com/2006/04/metadata">
+    <description>Can stop (or restart) interest on a credit contract from the collections page. Given by the Interest Stop Approver permission set.</description>
+    <isLicensed>false</isLicensed>
+    <label>Stop Interest</label>
+</CustomPermission>

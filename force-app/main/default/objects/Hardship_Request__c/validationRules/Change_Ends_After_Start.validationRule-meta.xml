@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Change_Ends_After_Start</fullName>
+    <active>true</active>
+    <errorConditionFormula>AND(NOT(ISBLANK(Change_Start_Date__c)), NOT(ISBLANK(Change_End_Date__c)), Change_End_Date__c &lt; Change_Start_Date__c)</errorConditionFormula>
+    <errorDisplayField>Change_End_Date__c</errorDisplayField>
+    <errorMessage>The change must end after it starts.</errorMessage>
+</ValidationRule>
