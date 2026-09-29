@@ -716,6 +716,35 @@ private class PaymentUtilTests {
     insert payments;
   }
 
+  // Delivered after signing: interest on the first payment runs from the Interest Start Date (goods delivered).
+  static testMethod void testFirstPaymentChargedFromInterestStartDate() {
+    createTestData();
+    update new Opportunity(Id = contract3.Id, Interest_Start_Date__c = Date.today().addDays(10));
+    Payment_File__c paymentFile = new Payment_File__c(File_Name__c = 'Unit Test interest start', File_Upload_Date__c = datetime.now());
+    insert paymentFile;
+    Test.startTest();
+    insert new Payment__c(
+      Payment_File__c = paymentFile.Id,
+      RecordTypeId = PaymentUtil.RECORDTYPE_ID_EZIDEBIT,
+      Payment_Date__c = Date.today().addDays(14),
+      Ezidebit_Ref_No__c = 'xxxxxxx',
+      Customer_Account_No__c = [SELECT Contract_no__c FROM Opportunity WHERE Id = :contract3.Id].Contract_no__c,
+      Agreement__c = contract3.Id,
+      Is_Credit_Contract__c = true,
+      Deducted_Amount__c = 130,
+      Amount_Deposited__c = 130,
+      Actual_Amount__c = 130,
+      Client_Fees__c = 1.5,
+      Fee_Amount__c = 0,
+      Setup_Fee__c = 0
+    );
+    Test.stopTest();
+    List<Scheduled_Payment__c> sps = [SELECT Payment_Frequency_Number__c FROM Scheduled_Payment__c WHERE Opportunity__c = :contract3.Id ORDER BY CreatedDate DESC LIMIT 1];
+    if (!sps.isEmpty()) {
+      System.assert(sps[0].Payment_Frequency_Number__c <= 4, 'no more than the 4 days since delivery: ' + sps[0].Payment_Frequency_Number__c);
+    }
+  }
+
   // Interest stopped on the agreement (InterestStop page): a payment on or after the stop date carries no interest.
   static testMethod void testInterestStoppedPaymentCarriesNoInterest() {
     createTestData();
