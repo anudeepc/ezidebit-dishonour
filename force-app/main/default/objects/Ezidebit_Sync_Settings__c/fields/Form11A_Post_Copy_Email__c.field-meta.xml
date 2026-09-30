@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Form11A_Post_Copy_Email__c</fullName>
+    <description>Mailbox that receives the Form 11A notice to print and post when the customer has no email. Blank: the daily send skips those and lists them in its summary, so collections send them from the Form 11A page.</description>
+    <label>Form 11A Post Copy Email</label>
+    <required>false</required>
+    <trackTrending>false</trackTrending>
+    <type>Email</type>
+    <unique>false</unique>
+</CustomField>

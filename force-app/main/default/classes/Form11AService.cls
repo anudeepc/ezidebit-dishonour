@@ -25,6 +25,15 @@ public without sharing class Form11AService {
     }
 
     public static Outcome send(Set<Id> dishonourIds) {
+        return send(dishonourIds, null, null);
+    }
+
+    /**
+     * postCopyTo: where the copy to print and post goes when the customer has no email. Blank means the
+     * user sending it; for the automatic daily send (Form11AAutoSend) blank means skip, so a person sends it.
+     * senderId: an org-wide email address to send from, or null for the user.
+     */
+    public static Outcome send(Set<Id> dishonourIds, String postCopyTo, Id senderId) {
         Outcome res = new Outcome();
         if (dishonourIds == null || dishonourIds.isEmpty()) {
             return res;
@@ -73,9 +82,10 @@ public without sharing class Form11AService {
             String pdfName = LETTER_TYPE + '_' + opp.Name + '_' + Datetime.now().format('ddMMMyyyy') + '.pdf';
 
             Boolean hasEmail = String.isNotBlank(opp.Account.PersonEmail);
-            String to = hasEmail ? opp.Account.PersonEmail : staff.Email;
+            String to = hasEmail ? opp.Account.PersonEmail : (postCopyTo != null ? postCopyTo : staff.Email);
             if (String.isBlank(to)) {
-                res.skipped.add(d.Name + ': no customer email and no email on your user');
+                res.skipped.add(d.Name + (postCopyTo == '' ? ': no customer email: print and post it from the Form 11A page'
+                    : ': no customer email and no email for the posted copy'));
                 continue;
             }
 
@@ -86,6 +96,9 @@ public without sharing class Form11AService {
             email.setSubject(SUBJECT);
             email.setToAddresses(new List<String>{ to });
             email.setBccAddresses(new List<String>{ 'noreply@r4k.com.au' });
+            if (senderId != null) {
+                email.setOrgWideEmailAddressId(senderId);
+            }
             email.setHtmlBody(emailBody(opp));
             email.setFileAttachments(new List<Messaging.EmailFileAttachment>{ efa });
             emails.add(email);

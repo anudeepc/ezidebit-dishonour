@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Form11A_Auto_Send__c</fullName>
+    <defaultValue>false</defaultValue>
+    <description>When on, Form11AAutoSend emails the Direct Debit Default Notice (Form 11A, NCC s87) each morning for every first default not yet sent, oldest first.</description>
+    <label>Form 11A Auto Send</label>
+    <trackTrending>false</trackTrending>
+    <type>Checkbox</type>
+</CustomField>
