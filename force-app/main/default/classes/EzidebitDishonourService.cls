@@ -696,6 +696,9 @@ public without sharing class EzidebitDishonourService {
         }
         List<Payment__c> flags = new List<Payment__c>();
         Boolean flagOn = !settings().Disable_Late_Return_Flag__c;
+        // Reversing also flags the payment, so it takes the place of the flag update (EzidebitLateReturnReversal).
+        Boolean reverseOn = flagOn && settings().Reverse_Late_Returns__c;
+        List<EzidebitLateReturnReversal.Request> reversals = new List<EzidebitLateReturnReversal.Request>();
         for (String pid : lateReturnsById.keySet()) {
             List<Payment__c> taken = paymentsById.get(pid);
             if (taken == null || taken.isEmpty()) {
@@ -703,12 +706,26 @@ public without sharing class EzidebitDishonourService {
             }
             Ezidebit_Dishonour__c d = lateReturnsById.get(pid);
             d.Reversed_Payment__c = taken[0].Id;
-            if (flagOn) {
+            Date returnedOn = d.Settlement_Date__c != null ? d.Settlement_Date__c : Date.today();
+            if (reverseOn) {
+                // Every copy Salesforce recorded is reversed: the customer paid none of them.
+                for (Payment__c pay : taken) {
+                    reversals.add(new EzidebitLateReturnReversal.Request(pay.Id, returnedOn,
+                        EzidebitLateReturnReversal.REASON_LATE_RETURN, d.Bank_Failed_Reason__c));
+                }
+            } else if (flagOn) {
                 for (Payment__c pay : taken) {
                     if (!pay.Late_Returned__c) {
-                        flags.add(new Payment__c(Id = pay.Id, Late_Returned__c = true,
-                            Late_Returned_Date__c = d.Settlement_Date__c != null ? d.Settlement_Date__c : Date.today()));
+                        flags.add(new Payment__c(Id = pay.Id, Late_Returned__c = true, Late_Returned_Date__c = returnedOn));
                     }
+                }
+            }
+        }
+        Integer reversed = 0; // payments flagged by reversing them
+        if (!reversals.isEmpty()) {
+            for (EzidebitLateReturnReversal.Row row : EzidebitLateReturnReversal.reverse(reversals, true)) {
+                if (row.outcome == 'Reversed') {
+                    reversed++;
                 }
             }
         }
@@ -721,9 +738,9 @@ public without sharing class EzidebitDishonourService {
         }
         save(reopen, false);
         if (flags.isEmpty()) {
-            return 0;
+            return reversed;
         }
-        return logErrors(Database.update(flags, false), 'flagLateReturns');
+        return reversed + logErrors(Database.update(flags, false), 'flagLateReturns');
     }
 
     private static Map<String, List<Ezidebit_Dishonour__c>> openInstalmentsByRef(Set<String> refs, Date since) {
