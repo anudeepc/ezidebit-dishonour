@@ -138,4 +138,30 @@ private class EzidebitLateReturnReversalTest {
         System.assertNotEquals(null, after.Reversed_By__c, 'the late return reversed the payment');
         System.assert(after.Late_Returned__c);
     }
+
+    @isTest
+    static void dailyReportListsTheDaysReversals() {
+        Datetime since = System.now().addMinutes(-5);
+        Payment__c p = allocatedEzidebitPayment();
+        if (p != null) {
+            EzidebitLateReturnReversal.reverse(new List<EzidebitLateReturnReversal.Request>{
+                new EzidebitLateReturnReversal.Request(p.Id, Date.today(), EzidebitLateReturnReversal.REASON_LATE_RETURN, null)
+            }, true);
+        }
+        Messaging.SingleEmailMessage mail = EzidebitReversalDailyReport.buildEmail(since);
+        if (p != null) {
+            System.assert(mail.getSubject().contains('1 payment'), mail.getSubject());
+            System.assert(mail.getHtmlBody().contains('taken back by the bank'), 'explains the reason');
+        } else {
+            System.assert(mail.getSubject().contains('none'), mail.getSubject());
+        }
+
+        insert new Ezidebit_Sync_Settings__c(SetupOwnerId = UserInfo.getUserId(), Reversal_Report_Recipients__c = 'finance@example.com; ops@example.com');
+        System.assertEquals(new List<String>{ 'finance@example.com', 'ops@example.com' }, EzidebitReversalDailyReport.recipients());
+
+        Test.startTest();
+        new EzidebitReversalDailyReport().execute(null);
+        Test.stopTest();
+        System.assertEquals(0, [SELECT COUNT() FROM ErrorLog__c WHERE MethodName__c = 'send' AND CreatedDate >= :since AND CreatedById = :UserInfo.getUserId()], 'the email was sent without an error');
+    }
 }

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Reversal_Report_Recipients__c</fullName>
+    <description>Comma-separated email addresses for the daily reversal email (EzidebitReversalDailyReport). Blank: Nav, Ravi and Chris.</description>
+    <label>Reversal Report Recipients</label>
+    <length>255</length>
+    <required>false</required>
+    <trackTrending>false</trackTrending>
+    <type>Text</type>
+    <unique>false</unique>
+</CustomField>
