@@ -1,0 +1,162 @@
+<apex:page standardController="Opportunity" renderAs="PDF">
+<apex:stylesheet value="{!URLFOR($Resource.PDFDocumentStyle, 'PDFDocumentStyle.css')}" />
+
+<c:PDFHeaderFooter type="header" position="left" showPageNumbers="false">
+  <c:PDFHeaderTerritory controllerType="Opportunity" controllerId="{!Opportunity.Id}" collection="true" header="true"/>
+</c:PDFHeaderFooter>
+
+<div style="font-size:14px;font-family:sans-serif;">
+<p style="text-align:right;">
+subsection 87(3) of the Code <br/>
+regulation 85 of the Regulations
+</p>
+
+<p style="font-weight:bold;text-align:center;">Direct Debit Default Notice</p>
+</div>
+
+<div style="margin-left:2em;margin-right:2em;font-size:14px;font-family:sans-serif;">
+<span><apex:outputText value="{0,date,dd' 'MMMMMMMMMMMMMMMMMMM' 'yyyy}">
+    <apex:param value="{!TODAY()}" /> 
+</apex:outputText></span><br/><br/>
+<div style="margin-left:3em;">{!Opportunity.Account.FirstName}&nbsp;{!Opportunity.Account.LastName}<br/>{!Opportunity.Account.PersonMailingStreet}<br/>{!Opportunity.Account.PersonMailingCity}, {!Opportunity.Account.PersonMailingState}, {!Opportunity.Account.PersonMailingPostalCode}</div>
+<br/><br/>
+<div style="font-size:14px;font-family:sans-serif;page-break-after:always;"> 
+
+<p>Dear {!IF(FIND(' ', Opportunity.Account.FirstName) > 0, LEFT(Opportunity.Account.FirstName, FIND(' ', Opportunity.Account.FirstName) - 1), Opportunity.Account.FirstName)},</p>
+
+<p style="color:red;text-decoration:underline;font-weight:bold;">
+  Re:&nbsp;{!Opportunity.Account.Territory_Company_Name__c} – DIRECT DEBIT DISHONOURED – DEFAULT NOTICE <br/>
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Contract number {!Opportunity.Contract_No__c} for {!TRIM(RIGHT(Opportunity.Name,LEN(Opportunity.Name)-FIND('-',Opportunity.Name)))}
+</p>
+
+<table width="100%" >
+  <tr><td width="25%"></td>
+      <td width="50%"> 
+          <div style="border:1px solid black;font-weight:bold;text-align:center;padding:10px;">  
+              IMPORTANT <br/>
+              We have not received a payment because your arrangements to pay by direct debit have been dishonoured.
+          </div>
+      </td>
+      <td width="25%"></td>
+  </tr>
+</table>
+
+<p style="font-weight:bold;">
+  YOU NEED TO CONTACT US IMMEDIATELY
+</p>
+<p style="font-weight:bold;">
+  1.    Is there a reason why your direct debit arrangements have failed?
+</p>
+<p>
+  There may be reasons why your direct debit may fail, and you may wish to check with your bank or financial institution. If you need to change your direct debit arrangements contact us at {!Opportunity.Account.Territory_Number__r.Collection_Number__c} or {!Opportunity.Account.Territory_Number__r.Debt_Collection_Email__c}.
+</p>
+<p>
+  If you continue to fail to make the payments due under your credit contract, we may take action against you.
+</p>
+
+<p style="font-weight:bold;">
+  2.    Are you experiencing financial difficulty? Contact us immediately
+</p>
+
+<p>
+  Contact us at {!Opportunity.Account.Territory_Number__r.Collection_Number__c} or {!Opportunity.Account.Territory_Number__r.Debt_Collection_Email__c} 
+  to discuss your situation. We may be able to help you to repay your debt by varying your contract (for example, changing the amount or timing of your repayments). The sooner you contact us, the easier it will be to help you.
+</p>
+
+<p>
+  If we refuse to change your contract, we will notify you in writing and you can seek a review of our decision by going to the AFCA scheme by:
+</p>
+
+<table>
+  <tr>
+    <td>Website:</td>
+    <td>www.afca.org.au</td>
+  </tr>
+  <tr>
+    <td>Email:</td>
+    <td>info@afca.org.au</td>
+  </tr>
+  <tr>
+    <td>Telephone:</td>
+    <td>1800 931 678 (free call)</td>
+  </tr>
+  <tr>
+    <td>Mail:</td>
+    <td>Australian Financial Complaints Authority, GPO Box 3, Melbourne VIC 3001</td>
+  </tr>
+</table>
+<c:PDFHeaderFooter type="footer" position="center" showPageNumbers="false">
+<c:PDFHeaderTerritory controllerType="Opportunity" controllerId="{!Opportunity.Id}" header="false"/>
+</c:PDFHeaderFooter>
+<c:PDFHeaderFooter type="footer" position="right" showPageNumbers="true">
+</c:PDFHeaderFooter>
+</div>
+</div>
+
+<div style="margin-left:2em;margin-right:2em;font-size:14px;font-family:sans-serif;">
+<div style="font-size:14px;font-family:sans-serif;"> 
+<c:PDFHeaderFooter type="header" position="left" showPageNumbers="false">
+  <c:PDFHeaderTerritory controllerType="Opportunity" controllerId="{!Opportunity.Id}" collection="true" header="true"/>
+</c:PDFHeaderFooter>
+
+<p>
+  If you go to the AFCA scheme, you may have enforcement action put on hold while your complaint is considered. You are not bound by the decision that the AFCA scheme makes and you can still apply to a court if you are not satisfied.
+</p>
+
+<p style="font-weight:bold;">
+  THE AFCA SCHEME IS A FREE AND INDEPENDENT SERVICE TO RESOLVE COMPLAINTS.
+</p>
+
+<p style="font-weight:bold;">
+  3.    If you are having financial difficulties, you can also contact a financial counsellor on <br/> 
+  &nbsp;&nbsp;&nbsp;&nbsp;1800 007 007 (free call)
+</p>
+
+<p>
+  For information about your options for managing your debts, ring 1800 007 007 from anywhere in Australia to talk to a free and independent financial counsellor.
+</p>
+
+<p style="font-weight:bold;">
+  Some useful tips on direct debits
+</p>
+
+<p>
+  Make sure you&apos;ve given the right account number and there is enough money in the account to cover the direct debits.
+</p>
+<p>
+  Read your Direct Debit Service Agreement carefully and check your bank statements to make sure the right amount is being taken out at the right time. If there is not enough money in the account, you will be in default and may have to pay a fee for that default.
+</p>
+<p>
+  <em>Changing or cancelling your direct debit</em>
+</p>
+<p>
+  Contact us if you need to change the dates when the direct debit is taken out.
+</p>
+<p>
+  If you close the account, remember to change the direct debit so it comes from another account.
+</p>
+<p>
+  You can usually cancel a direct debit with us or with your bank or financial institution. You may need to do this in writing. Contact your bank or financial institution a few days after you&apos;ve sent your written instruction to check that the direct debit has been cancelled.
+</p>
+<p>
+  Before you cancel a direct debit make sure you&apos;ve made other payment arrangements with us so you don&apos;t default on your payment.
+</p>
+<p>
+  <em>Resolving a problem with your direct debit</em>
+</p>
+<p>
+  If you have a problem with a direct debit you can complain to us or to your bank or financial institution. If you can&apos;t resolve your complaint with us, contact the AFCA scheme by. Email: info@afca.org.au; online: www.afca.org.au; phone; 1800 931 678 or mail: GPO Box 3, Melbourne, 3001.
+</p>
+<p>
+  For more information about direct debits, talk to your bank or financial institution.
+</p>
+
+
+</div>
+</div>
+<c:PDFHeaderFooter type="footer" position="center" showPageNumbers="false">
+<c:PDFHeaderTerritory controllerType="Opportunity" controllerId="{!Opportunity.Id}" header="false"/>
+</c:PDFHeaderFooter>
+<c:PDFHeaderFooter type="footer" position="right" showPageNumbers="true">
+</c:PDFHeaderFooter>
+</apex:page>
