@@ -1,0 +1,238 @@
+<apex:page sidebar="false" showHeader="false" standardStylesheets="false" controller="GoogleChartsPaymentController" action="{!initEarlyPayoutStatement}">
+    <apex:stylesheet value="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.css"/>
+    <apex:stylesheet value="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.12.1/jquery-ui.css"/>
+
+    <apex:includeScript value="https://code.jquery.com/jquery-3.3.1.js"/>
+    <apex:includeScript value="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.12.1/jquery-ui.js"/>
+    <apex:includeScript value="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js"/>
+    <apex:includeScript value="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"/>
+
+    <title>R4K Early Payout</title>
+
+    <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1"/>
+        <style>
+            body {
+                font-family: "Lato", sans-serif;
+            }
+            
+            .sidenav {
+                height: 100%;
+                width: 0;
+                position: fixed;
+                z-index: 1;
+                top: 0;
+                left: 0;
+                overflow-x: hidden;
+                transition: 0.5s;
+                padding-top: 60px;
+            }
+            
+            .sidenav a {
+                padding: 8px 8px 8px 32px;
+                text-decoration: none;
+                font-size: 25px;
+                color: #818181;
+                display: block;
+                transition: 0.3s;
+            }
+            
+            .sidenav a:hover {
+                color: #f1f1f1;
+            }
+            
+            .sidenav .closebtn {
+                position: absolute;
+                top: 0;
+                right: 25px;
+                font-size: 36px;
+                margin-left: 50px;
+            }
+            
+            @media screen and (max-height: 450px) {
+            .sidenav {padding-top: 15px;}
+            .sidenav a {font-size: 18px;}
+            }
+            
+            .slidecontainer {
+                width: 100%;
+            }
+            
+            .slider {
+                -webkit-appearance: none;
+                width: 100%;
+                height: 15px;
+                border-radius: 5px;
+                background: #d3d3d3;
+                outline: none;
+                opacity: 0.7;
+                -webkit-transition: .2s;
+                transition: opacity .2s;
+            }
+            
+            .slider:hover {
+                opacity: 1;
+            }
+            
+            .slider::-webkit-slider-thumb {
+                -webkit-appearance: none;
+                appearance: none;
+                width: 25px;
+                height: 25px;
+                border-radius: 50%;
+                background: #4CAF50;
+                cursor: pointer;
+            }
+            
+            .slider::-moz-range-thumb {
+                width: 25px;
+                height: 25px;
+                border-radius: 50%;
+                background: #4CAF50;
+                cursor: pointer;
+            }
+        </style>
+    </head>
+
+    <apex:form >
+        <div style="background-color:#d22f27;cursor: pointer;">
+            <nav class="navbar">  
+                <a class="navbar-brand" style="margin: 1px auto;" href="#">
+                    <apex:image value="{!URLFOR($Resource.R4KLogoTransparentCCWhiteR)}" width="150" alt="R4K"/>
+                </a>
+            </nav>
+        </div>
+        <div class="container">
+            <div class="" style="margin-top:50px;">
+                <apex:outputPanel rendered="{!pastPayoutDate}">
+                    <p style="font-weight:bold;">
+                        Please contact the R4K Group at Tel: +61 480 022 441 | Option 2 or at compliance@r4k.com.au to get the updated payout statement.
+                    </p>
+                </apex:outputPanel>
+
+                <apex:outputPanel rendered="{!!pastPayoutDate}">
+                    <p>Please scroll down and click <b>"Proceed To Payment"</b> button to make payment</p>
+
+                    <p style="font-weight:bold;" class="mt-4">
+                        {!Opportunity.Account.FirstName}&nbsp;{!Opportunity.Account.LastName}<br/>
+                        Agreement No: {!opportunity.Contract_No__c}
+                    </p>
+                    <p style="font-weight:bold;" class="mt-4">Payout Figure Calculation:</p>
+
+                    <table width="100%" border="1" style="color:black;border-spacing:0;">
+                        <tr style="font-weight:bold;background-color:lightgrey;">
+                            <td width="70%" style="font-weight:bold;">
+                                Element
+                            </td>
+                            <td width="30%" style="font-weight:bold;padding-left:5px;">
+                                Amount
+                            </td>
+                        </tr>
+                        <tr>
+                            <td width="70%" style="">
+                                Total Amount of Repayments: (Cash Price + Fees + Interest) – per your Agreement
+                            </td>
+                            <td width="30%" style="padding-left:5px;">
+                                <apex:outputText value="{0, number, currency}">
+                                    <apex:param value="{!amountOfCredit}"/>
+                                </apex:outputText>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td width="70%" style="">
+                                Total Loan Amount: (Amount of Credit less Interest)
+                            </td>
+                            <td width="30%" style="padding-left:5px;">
+                                <apex:outputText value="{0, number, currency}">
+                                    <apex:param value="{!amountBorrowed}"/>
+                                </apex:outputText>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td width="70%" style="">
+                                Dishonour Fees ({!CEILING(totalFees / 16.50)} fees of $16.50 each):
+                            </td>
+                            <td width="30%" style="padding-left:5px;">
+                                <apex:outputText value="{0, number, currency}">
+                                    <apex:param value="{!totalFees}"/>
+                                </apex:outputText>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td width="70%" style="">
+                                Repayments made: (Principal ${!totalPrincipalPaid} + Interest ${!totalInterestPaid})
+                            </td>
+                            <td width="30%" style="padding-left:5px;">
+                                <apex:outputText value="{0, number, currency}">
+                                    <apex:param value="{!totalPaidAmount}"/>
+                                </apex:outputText>
+                            </td>
+                        </tr>
+                        <tr style="font-weight:bold;">
+                            <td width="70%" style="font-weight:bold;">
+                                Adjusted Loan Amount (Amount + dishonour fees – Principal repayments made). This is your account balance.
+                            </td>
+                            <td width="30%" style="padding-left:5px;">
+                                <apex:outputText value="{0, number, currency}">
+                                    <apex:param value="{!adjustedAmountBorrowed}"/>
+                                </apex:outputText>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td width="70%" style="">
+                                Total Interest
+                            </td>
+                            <td width="30%" style="padding-left:5px;">
+                                <apex:outputText value="{0, number, currency}">
+                                    <apex:param value="{!totalInterest}"/>
+                                </apex:outputText>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td width="70%" style="">
+                                Interest Paid
+                            </td>
+                            <td width="30%" style="padding-left:5px;">
+                                <apex:outputText value="{0, number, currency}">
+                                    <apex:param value="{!totalInterestPaid}"/>
+                                </apex:outputText>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td width="70%" style="">
+                                Interest accrued since your last payment, to the date of your payout statement
+                            </td>
+                            <td width="30%" style="padding-left:5px;">
+                                <apex:outputText value="{0, number, currency}">
+                                    <apex:param value="{!quotedAccruedInterest}"/>
+                                </apex:outputText>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td width="70%" style="font-weight:bold;">
+                                &nbsp;&nbsp;&nbsp;
+                            </td>
+                            <td width="30%" style="padding-left:5px;">
+                                &nbsp;&nbsp;&nbsp;
+                            </td>
+                        </tr>
+                        <tr style="font-weight:bold;">
+                            <td width="70%" style="font-weight:bold;">
+                                Payout Figure (Adjusted Loan Amount + Interest accrued since your last payment)
+                            </td>
+                            <td width="30%" style="padding-left:5px;">
+                                <apex:outputText value="{0, number, currency}">
+                                    <apex:param value="{!opportunity.Actual_Payout_Figure__c}"/>
+                                </apex:outputText>
+                            </td>
+                        </tr>
+                    </table>
+                    <p class="text-center mt-4">
+                        <apex:commandButton value="Proceed To Payment" action="{!proceedToPayout}" styleClass="btn btn-lg btn-block btn-primary"/>
+                    </p>
+                </apex:outputPanel>
+            </div>
+
+        </div>
+    </apex:form>
+</apex:page>

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Additional_Interest_Paid__c</fullName>
+    <formula>IF( Is_in_Hardship__c ||  Exclude_Interest__c ||  ISPICKVAL(CurrencyIsoCode, &quot;NZD&quot;) ,0,IF(Accrued_Unpaid_Interest_Amount__c&gt;0 &amp;&amp; Accrued_Unpaid_Interest_Amount__c &gt; Paid_Amount__c - (Daily_Interest_Rate__c * Payment_Frequency_Number__c *  Loan_Balance_Amount__c),IF(Paid_Amount__c - (Daily_Interest_Rate__c * Payment_Frequency_Number__c *  Loan_Balance_Amount__c) &gt; 0, Paid_Amount__c - (Daily_Interest_Rate__c * Payment_Frequency_Number__c *  Loan_Balance_Amount__c), 0), Accrued_Unpaid_Interest_Amount__c))</formula>
+    <formulaTreatBlanksAs>BlankAsZero</formulaTreatBlanksAs>
+    <label>Additional Interest Paid</label>
+    <precision>18</precision>
+    <required>false</required>
+    <scale>2</scale>
+    <trackHistory>false</trackHistory>
+    <trackTrending>false</trackTrending>
+    <type>Currency</type>
+</CustomField>

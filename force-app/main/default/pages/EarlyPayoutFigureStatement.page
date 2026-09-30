@@ -1,0 +1,302 @@
+<apex:page showHeader="false" sidebar="false" controller="GoogleChartsPaymentController" action="{!initEarlyPayoutStatement}" renderAs="{!IF($CurrentPage.Parameters.renderAs='pdf','pdf','html')}">
+    <head>
+        <title>Early Payout Figure Statement</title>
+        <style>
+            @page{
+                @top-center {
+                    content: element(header);
+                }
+                @bottom-center {
+                    content: element(footer);
+                }
+            }
+            div.header {
+                position: running(header);
+            }
+            div.footer {
+                position: running(footer);
+            }
+            .body{
+                font-size: 12px;
+                font-family: sans-serif;
+            }                          
+        </style>
+    </head>
+    <apex:stylesheet value="{!URLFOR($Resource.PDFDocumentStyle, 'PDFDocumentStyle.css')}" />
+
+    <apex:form rendered="{!IF($CurrentPage.Parameters.renderAs='pdf' || opportunity.StageName = 'Completed' || opportunity.Final_Payout_Figure__c <= 0, false, true)}">
+        <div style="text-align:center;margin:10px 0px;">
+            <apex:commandButton value="Send Statement" action="{!sendEarlyPayoutStatement}"/>&nbsp;&nbsp;&nbsp;&nbsp;
+            <apex:commandButton value="Cancel" action="/{!opportunity.Id}"/>
+        </div>
+    </apex:form>
+    
+    <c:PDFHeaderFooter type="header" position="center" showPageNumbers="false">
+        <apex:image value="{!URLFOR($Resource.R4KLogoTransparentCC)}" width="120" alt="R4K"/>
+    </c:PDFHeaderFooter>
+    <!--<c:PDFHeaderFooter type="header" position="right" showPageNumbers="false">
+        <span style="float:right;font-size:11px;font-family:sans-serif;">
+            <b>R4K Group</b><br/>
+            35A Railway Road<br/>
+            Blackburn VIC 3130<br/>
+            Tel: +61 480 022 441 | Option 2<br/>
+            Email: compliance@r4k.com.au
+        </span>
+    </c:PDFHeaderFooter>-->
+
+    <apex:outputPanel rendered="{!IF($CurrentPage.Parameters.renderAs='pdf', true, false)}">
+        <!--<c:PDFHeaderFooter type="footer" position="left">
+            <span style="font-size:11px;font-family:sans-serif;">
+                R4K Licensing Pty Ltd | ABN 16 668 357 686 | 35A Railway Road, Blackburn VIC 3130 | +61 488 884 542    
+            </span>    
+        </c:PDFHeaderFooter>-->
+        <c:PDFHeaderFooter type="footer" position="right" showPageNumbers="true">
+        </c:PDFHeaderFooter>
+    </apex:outputPanel>
+
+    <div style="font-size:14px;font-family:sans-serif;padding-left:10px;padding-right:10px;">
+        <!--<p>
+            Our Reference:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{!opportunity.Account.Customer_No__c} <br/>
+            Your Ref: &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<br/>
+            Contact Person: &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Lily Culham<br/>
+            Email: &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;compliance@r4k.com.au
+        </p>-->
+
+        <div style="font-size:14px;font-family:sans-serif;">
+            <span><apex:outputText value="{0,date,dd' 'MMMMMMMMMMMMMMMMMMM' 'yyyy}">
+                <apex:param value="{!TODAY()}" /> 
+            </apex:outputText></span><br/><br/>
+            <div style="">
+                {!Opportunity.Account.Territory_Number__r.Company_Name__c}<br/>
+                {!Opportunity.Account.Territory_Number__r.PPB_Street__c}<br/> 
+                {!Opportunity.Account.Territory_Number__r.PPB_Suburb__c} {!Opportunity.Account.Territory_Number__r.PPB_State__c} {!Opportunity.Account.Territory_Number__r.PPB_Postcode__c}<br/><br/> 
+            </div>
+            <div style="">
+                {!Opportunity.Account.FirstName}&nbsp;{!Opportunity.Account.LastName}<br/>
+                {!Opportunity.Account.PersonMailingStreet}<br/>
+                {!Opportunity.Account.PersonMailingCity} {!Opportunity.Account.PersonMailingState} {!Opportunity.Account.PersonMailingPostalCode}
+            </div>
+        </div>
+
+        <p>
+            By email: {!opportunity.Account.PersonEmail}<br/>
+        </p>
+    
+        <p style="font-weight:bold;">
+            Re: Early Payout Figure Statement – R4K Instalment Agreement No. {!opportunity.Contract_No__c}
+            <br/><br/>
+        </p>
+    
+        <div style="font-size:14px;font-family:sans-serif;"> 
+            <p>Dear {!Opportunity.Account.Name},</p>
+            
+            <p>
+                We are writing to provide you with the requested early payout figure for your credit contract
+                regarding the purchase of a <strong>{!TRIM(RIGHT(Opportunity.Name,LEN(Opportunity.Name)-FIND(' - ',Opportunity.Name)-2))}</strong>. As per Section 83 of
+                the National Credit Code, we are obliged to furnish you with a written statement specifying the
+                calculated payout figure.
+            </p>
+
+            <p>
+                Here's a breakdown of the components involved in calculating the payout figure as at the date of
+                this written statement:
+            </p>
+
+            <p style="font-weight:bold;">Payout Figure Calculation:</p>
+
+            <table width="100%" border="1" style="color:black;border-spacing:0;page-break-after:always;" class="mt-4">
+                <tr style="font-weight:bold;background-color:lightgrey;">
+                    <td width="70%" style="font-weight:bold;">
+                        Element
+                    </td>
+                    <td width="30%" style="font-weight:bold;padding-left:5px;">
+                        Amount
+                    </td>
+                </tr>
+                <tr>
+                    <td width="70%" style="">
+                        Total Amount of Repayments: (Cash Price + Fees + Interest) – per your Agreement
+                    </td>
+                    <td width="30%" style="padding-left:5px;">
+                        <apex:outputText value="{0, number, currency}">
+                            <apex:param value="{!amountOfCredit}"/>
+                        </apex:outputText>
+                    </td>
+                </tr>
+                <tr>
+                    <td width="70%" style="">
+                        Total Loan Amount: (Amount of Credit less Interest)
+                    </td>
+                    <td width="30%" style="padding-left:5px;">
+                        <apex:outputText value="{0, number, currency}">
+                            <apex:param value="{!amountBorrowed}"/>
+                        </apex:outputText>
+                    </td>
+                </tr>
+                <tr>
+                    <td width="70%" style="">
+                        Dishonour Fees ({!CEILING(totalFees / 16.50)} fees of $16.50 each):
+                    </td>
+                    <td width="30%" style="padding-left:5px;">
+                        <apex:outputText value="{0, number, currency}">
+                            <apex:param value="{!totalFees}"/>
+                        </apex:outputText>
+                    </td>
+                </tr>
+                <tr>
+                    <td width="70%" style="">
+                        Repayments made: (Principal ${!totalPrincipalPaid} + Interest ${!totalInterestPaid})
+                    </td>
+                    <td width="30%" style="padding-left:5px;">
+                        <apex:outputText value="{0, number, currency}">
+                            <apex:param value="{!totalPaidAmount}"/>
+                        </apex:outputText>
+                    </td>
+                </tr>
+                <tr style="font-weight:bold;">
+                    <td width="70%" style="font-weight:bold;">
+                        Adjusted Loan Amount (Amount + dishonour fees – Principal repayments made). This is your account balance.
+                    </td>
+                    <td width="30%" style="padding-left:5px;">
+                        <apex:outputText value="{0, number, currency}">
+                            <apex:param value="{!adjustedAmountBorrowed}"/>
+                        </apex:outputText>
+                    </td>
+                </tr>
+                <tr>
+                    <td width="70%" style="">
+                        Total Interest
+                    </td>
+                    <td width="30%" style="padding-left:5px;">
+                        <apex:outputText value="{0, number, currency}">
+                            <apex:param value="{!totalInterest}"/>
+                        </apex:outputText>
+                    </td>
+                </tr>
+                <tr>
+                    <td width="70%" style="">
+                        Interest Paid
+                    </td>
+                    <td width="30%" style="padding-left:5px;">
+                        <apex:outputText value="{0, number, currency}">
+                            <apex:param value="{!totalInterestPaid}"/>
+                        </apex:outputText>
+                    </td>
+                </tr>
+                <tr>
+                    <td width="70%" style="">
+                        Interest accrued since your last payment (charged daily at your contract annual percentage rate, not yet added to your balance)
+                    </td>
+                    <td width="30%" style="padding-left:5px;">
+                        <apex:outputText value="{0, number, currency}">
+                            <apex:param value="{!accruedInterest}"/>
+                        </apex:outputText>
+                    </td>
+                </tr>
+                <tr>
+                    <td width="70%" style="font-weight:bold;">
+                        &nbsp;&nbsp;&nbsp;
+                    </td>
+                    <td width="30%" style="padding-left:5px;">
+                        &nbsp;&nbsp;&nbsp;
+                    </td>
+                </tr>
+                <tr style="font-weight:bold;">
+                    <td width="70%" style="font-weight:bold;">
+                        Payout Figure (Adjusted Loan Amount + Interest accrued since your last payment)
+                    </td>
+                    <td width="30%" style="padding-left:5px;">
+                        <apex:outputText value="{0, number, currency}">
+                            <apex:param value="{!opportunity.Final_Payout_Figure__c}"/>
+                        </apex:outputText>
+                    </td>
+                </tr>
+            </table>
+
+            <p>
+                Therefore, the calculated early payout figure for your Instalment Agreement is&nbsp;<apex:outputText value="{0, number, currency}"><apex:param value="{!opportunity.Final_Payout_Figure__c}"/></apex:outputText>. You can make the payment using one of the following methods:
+            </p>
+
+            <p style="padding-left:20px;">
+                <strong>1.	Online Payment:</strong><br/>
+                To make the payment securely online using your card, please click the following “(<a href="{!payoutLink}" target="_blank">payment link</a>)” and proceed to the payments section.
+            </p>
+
+            <p style="padding-left:20px;">
+                <strong>2.	Direct Transfer:</strong><br/>
+                Alternatively, you can make a direct transfer using the following bank details:<br/>
+                <table class="mt-2" style="margin-left:20px;">
+                    <!--<tr>
+                        <td width="30%">
+                            Bank:
+                        </td>
+                        <td style="padding-left:10px;">
+                            {!Opportunity.Account.Territory_Number__r.EMF_Account_Name__c}
+                        </td>
+                    </tr>-->
+                    <tr>
+                        <td width="30%">
+                            BSB:
+                        </td>
+                        <td style="padding-left:10px;">
+                            {!Opportunity.Account.Territory_Number__r.EMF_BSB__c}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td width="30%">
+                            Account Number:
+                        </td>
+                        <td style="padding-left:10px;">
+                            {!Opportunity.Account.Territory_Number__r.EMF_Account__c}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td width="30%">
+                            Reference:
+                        </td>
+                        <td style="padding-left:10px;">
+                            {!Opportunity.Contract_No__c}EPF <strong>Please ensure the reference number is included with your transfer to ensure proper allocation of funds.</strong>
+                        </td>
+                    </tr>
+                </table>
+            </p>
+
+            <p>
+                The amount required to pay out your credit contract may change according to the date on which it is paid.
+                The payout figure above is calculated as at the date of this statement. Interest charges accrue daily on your balance
+                at your contract annual percentage rate, currently&nbsp;<apex:outputText value="{0, number, currency}"><apex:param value="{!dailyInterest}"/></apex:outputText>&nbsp;per day, up to the date your contract is paid out.
+                If a scheduled repayment is debited, or a fee or charge becomes payable, before we receive your payment, the amount required to pay out your contract will also change.
+            </p>
+            <p>
+                If we receive the payout figure above in full before&nbsp;<apex:outputText value="{0,date,dd' 'MMMMMMMMMMMMMMMMMMM' 'yyyy}"><apex:param value="{!expectedPayoutDate}"/></apex:outputText>&nbsp;(your next payment due date), we will accept it as payment in full.
+                If you pay on or after that date, please contact us first for an updated payout figure.
+            </p>
+
+            <p>
+                This response is provided to you on behalf of our credit provider - {!opportunity.Account.Territory_Number__r.Company_Name__c}. (ACL {!opportunity.Account.Territory_Number__r.A_C_L__c};
+                ABN {!opportunity.Account.Territory_Number__r.A_B_N__c}) trading as {!opportunity.Account.Territory_Number__r.Trading_Name__c}.
+            </p>
+
+            <p>
+                You are entitled to pay out your credit contract at any time.
+            </p>
+
+            <p>
+                Thank you for your attention to this matter. If you require further clarification or assistance, please
+                do not hesitate to contact our customer care team
+            </p>
+            
+            <p>
+                <br/><br/>
+                Best Regards,<br/>
+                <strong>
+                    {!SUBSTITUTE(SUBSTITUTE(Opportunity.Account.Territory_Number__r.Company_Name__c, "PTY LTD", "TEAM"), "Pty Ltd", "Team")}<br/>
+                    {!Opportunity.Account.Territory_Number__r.PPB_Street__c} {!Opportunity.Account.Territory_Number__r.PPB_Suburb__c} {!Opportunity.Account.Territory_Number__r.PPB_State__c} {!Opportunity.Account.Territory_Number__r.PPB_Postcode__c}<br/>
+                    Phone: +61 480 022 441<br/>
+                    Email: wecare@r4k.com.au<br/>
+                    Web: www.r4k.com.au
+                </strong>
+            </p>
+        </div>
+    </div>
+</apex:page>
