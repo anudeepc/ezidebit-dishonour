@@ -221,6 +221,9 @@ private class GoogleChartsPaymentControllerTest{
             ApexPages.currentPage().getParameters().put('oppId',oppList[0].Id);
             GoogleChartsPaymentController gc = new GoogleChartsPaymentController();
 			gc.initEarlyPayoutStatement();
+            // The statement's lines add up to the payout figure: balance + unpaid interest + accrued interest.
+            System.assert(Math.abs(gc.adjustedAmountBorrowed + gc.unpaidInterest + gc.accruedInterest - gc.opportunity.Final_Payout_Figure__c) <= 0.02,
+                'payout breakdown adds up');
             gc.sendEarlyPayoutStatement();
             gc.proceedToPayout();
         }

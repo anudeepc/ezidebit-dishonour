@@ -183,6 +183,18 @@
                         </apex:outputText>
                     </td>
                 </tr>
+                <apex:outputPanel layout="none" rendered="{!unpaidInterest != 0}">
+                <tr>
+                    <td width="70%" style="">
+                        Interest charged in earlier periods and not yet paid
+                    </td>
+                    <td width="30%" style="padding-left:5px;">
+                        <apex:outputText value="{0, number, currency}">
+                            <apex:param value="{!unpaidInterest}"/>
+                        </apex:outputText>
+                    </td>
+                </tr>
+                </apex:outputPanel>
                 <tr>
                     <td width="70%" style="">
                         Interest accrued since your last payment (charged daily at your contract annual percentage rate, not yet added to your balance)
@@ -203,7 +215,7 @@
                 </tr>
                 <tr style="font-weight:bold;">
                     <td width="70%" style="font-weight:bold;">
-                        Payout Figure (Adjusted Loan Amount + Interest accrued since your last payment)
+                        Payout Figure (Adjusted Loan Amount + interest not yet paid + interest accrued since your last payment)
                     </td>
                     <td width="30%" style="padding-left:5px;">
                         <apex:outputText value="{0, number, currency}">

@@ -29,6 +29,8 @@ public OpportunityLineItem earlyTerminationProd{get;set;}
 public Date expectedPayoutDate{get;set;}
 public Decimal earlyTerminationFee{get;set;}
 public Decimal accruedInterest{get;set;}
+public Decimal unpaidInterest{get;set;}
+public Decimal quotedUnpaidInterest{get;set;}
 public Decimal dailyInterest{get;set;}
 public Decimal quotedAccruedInterest{get;set;}
 public Decimal interestOwing{get;set;}
@@ -74,7 +76,7 @@ public void initEarlyPayoutStatement(){
                 Account.PersonMailingPostalCode,Total_Paid_Amount__c,Remaining_Amount__c,Contract_No__c,Start_Date__c,Term_Months__c,Payment_Frequency__c,Payment_Frequency_Number__c,
                 Total_Loan_Amount__c,Total_Loan_Amount_Incl_Unpaid_Interest__c,Total_Loan_Balance_Amount__c,Statement_Closing_Balance__c,Total_Paid_Interest_Amount__c,
                 Account.Customer_No__c,Account.PersonEmail,Final_Payout_Figure__c,Interest_Accrued_Since_Last_Payment__c,Daily_Interest_Rate__c,Total_Additional_Fees__c,Total_Paid__c,Total_Paid_Principal_Amount__c,Total_Interest_Amount__c,
-                Account.Territory_Number__r.Company_Name__c,Account.Territory_Number__r.Trading_Name__c,Account.Territory_Number__r.A_B_N__c,Account.Territory_Number__r.A_C_L__c,
+                Unpaid_Interest_Amount__c,Account.Territory_Number__r.Company_Name__c,Account.Territory_Number__r.Trading_Name__c,Account.Territory_Number__r.A_B_N__c,Account.Territory_Number__r.A_C_L__c,
                 Account.Territory_Number__r.Ezidebit_Instant_URL__c,Expected_Payout_Date__c,Account.PersonContactId,Actual_Payout_Figure__c,Customer_Support_Phone__c,StageName,
                 Account.Territory_Number__r.PPB_Street__c,Account.Territory_Number__r.PPB_Suburb__c,Account.Territory_Number__r.PPB_State__c,Account.Territory_Number__r.PPB_Postcode__c,
                 Account.Territory_Number__r.EMF_Account_Name__c,Account.Territory_Number__r.EMF_BSB__c,Account.Territory_Number__r.EMF_Account__c,Ezidebit_Starting_Date__c 
@@ -96,15 +98,23 @@ public void initEarlyPayoutStatement(){
         totalInterest = opportunity.Total_Interest_Amount__c ?? 0;
         interestOwing = (totalInterest - totalInterestPaid);
         // Compliance (Sep 2026): no early termination fee. The payout figure is
-        // Final_Payout_Figure__c = account balance + interest accrued daily since
-        // the last payment; the legacy Payout_Figure__c still adds 25% of interestOwing.
+        // Final_Payout_Figure__c = account balance + interest charged in earlier periods
+        // and not yet paid + interest accrued daily since the last payment (no future
+        // interest; R4K Services and Naash only); the legacy Payout_Figure__c still adds 25% of interestOwing.
         earlyTerminationFee = 0;
         adjustedAmountBorrowed = (amountBorrowed + totalFees - totalPrincipalPaid);
         accruedInterest = opportunity.Interest_Accrued_Since_Last_Payment__c ?? 0;
+        // Same rule as Final_Payout_Figure__c: unpaid interest counts for R4K Services and Naash agreements.
+        String company = (opportunity.Account.Territory_Number__r.Company_Name__c ?? '').toUpperCase();
+        unpaidInterest = company == 'R4K SERVICES PTY LTD' || company == 'NAASH PTY LTD' ? (opportunity.Unpaid_Interest_Amount__c ?? 0) : 0;
         dailyInterest = ((opportunity.Total_Loan_Balance_Amount__c ?? 0) * (opportunity.Daily_Interest_Rate__c ?? 0) / 100).setScale(2);
         // EarlyPayoutRedirection charges the figure quoted on the statement
         // (Actual_Payout_Figure__c), so it shows the interest that figure included.
-        quotedAccruedInterest = (opportunity.Actual_Payout_Figure__c ?? 0) - adjustedAmountBorrowed;
+        // A figure quoted before unpaid interest was added to the payout holds less than the
+        // unpaid interest, so its breakdown shows only what it included.
+        Decimal quotedAboveBalance = (opportunity.Actual_Payout_Figure__c ?? 0) - adjustedAmountBorrowed;
+        quotedUnpaidInterest = Math.max(0, Math.min(unpaidInterest, quotedAboveBalance));
+        quotedAccruedInterest = quotedAboveBalance - quotedUnpaidInterest;
 
         List<Payment__c> payments = [
             SELECT 
