@@ -111,6 +111,9 @@ a:hover {
   </div>
 </nav>
 
+<!-- Direct Debit Default Notice (Form 11A) deadlines -->
+<c:Form11ADueAlert ccCAP="{!ccCAP}"/>
+
 <!-- command buttons div -->
 <div style="margin-top:20px;margin-below:20px;">
 <apex:outputPanel rendered="{!!showCAPPanel}">

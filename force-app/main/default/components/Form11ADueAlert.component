@@ -1,0 +1,46 @@
+<apex:component controller="Form11ADueAlertController">
+<apex:attribute name="ccCAP" type="String" description="Passed through to the Form 11A page link." required="false"/>
+<style>
+.f11a-box { border-radius:8px; padding:14px 16px; margin:12px 0 16px 0; font-family:Arial,sans-serif; font-size:13px; line-height:1.5; }
+.f11a-red { background:#fdecea; border:1px solid #f5c2c0; border-left:6px solid #c62828; }
+.f11a-amber { background:#fff8e1; border:1px solid #ffe08a; border-left:6px solid #e0a100; }
+.f11a-green { background:#edf7ee; border:1px solid #c3e6cb; border-left:6px solid #2e7d32; }
+.f11a-title { font-size:15px; font-weight:bold; margin-bottom:4px; }
+.f11a-counts span { display:inline-block; margin:4px 8px 4px 0; padding:2px 10px; border-radius:12px; font-weight:bold; font-size:12px; }
+.f11a-c-red { background:#c62828; color:#fff; }
+.f11a-c-amber { background:#e0a100; color:#fff; }
+.f11a-c-grey { background:#e0e0e0; color:#333; }
+.f11a-rules { margin:6px 0 0 18px; padding:0; }
+.f11a-next { margin-top:6px; font-size:12px; }
+.f11a-next td { padding:2px 12px 2px 0; }
+.f11a-btn { display:inline-block; margin-top:8px; padding:6px 14px; background:#1f4e79; color:#fff !important; border-radius:4px; text-decoration:none; font-weight:bold; }
+</style>
+<div class="f11a-box f11a-{!level}">
+    <div class="f11a-title">
+        <apex:outputText rendered="{!level == 'red'}" value="Direct Debit Default Notices (Form 11A): action needed today"/>
+        <apex:outputText rendered="{!level == 'amber'}" value="Direct Debit Default Notices (Form 11A): some are due in the next 3 days"/>
+        <apex:outputText rendered="{!level == 'green'}" value="Direct Debit Default Notices (Form 11A): nothing urgent"/>
+    </div>
+    <div class="f11a-counts">
+        <apex:outputPanel rendered="{!overdue > 0}"><span class="f11a-c-red">{!overdue} past the 14-day limit</span></apex:outputPanel>
+        <apex:outputPanel rendered="{!dueToday > 0}"><span class="f11a-c-red">{!dueToday} due today</span></apex:outputPanel>
+        <apex:outputPanel rendered="{!dueSoon > 0}"><span class="f11a-c-amber">{!dueSoon} due in the next 3 days</span></apex:outputPanel>
+        <span class="f11a-c-grey">{!totalUnsent} not sent yet</span>
+    </div>
+    <ul class="f11a-rules">
+        <li><b>What it is:</b> the first time a customer's direct debit fails, the law (NCC s87) says we must send them the Direct Debit Default Notice within <b>14 days of the debit date</b>. It applies even if they pay afterwards, and weekends count.</li>
+        <li><b>Our rule:</b> send it the day it appears, and no later than day 2. The Form 11A page shows each one's "due by" date: amber from day 7, red from day 10.</li>
+        <li><b>How:</b> on the Form 11A page tick the rows, then Review and send. On the Dishonours list, "Fees &amp; Letter" also sends this notice. "Fees" means it has already gone, and nothing is sent twice.</li>
+        <li><b>Past the limit?</b> Send it straight away and tell Compliance (Lily), so it can be recorded.</li>
+        <apex:outputPanel rendered="{!autoSendOn}"><li><b>Automatic send is on:</b> notices go out at 8am each day. Anything still listed here couldn't go automatically (for example no email address) and needs you.</li></apex:outputPanel>
+    </ul>
+    <apex:outputPanel rendered="{!nextDue.size > 0}">
+        <table class="f11a-next">
+            <apex:repeat value="{!nextDue}" var="i">
+                <tr><td>{!i.contractNo}</td><td>{!i.customer}</td><td>due by <apex:outputText value="{0,date,d MMM yyyy}"><apex:param value="{!i.dueDate}"/></apex:outputText></td><td><b>{!i.label}</b></td></tr>
+            </apex:repeat>
+        </table>
+    </apex:outputPanel>
+    <a class="f11a-btn" href="/apex/AdminProcessForm11A?ccCAP={!ccCAP}">Open the Form 11A page to send</a>
+</div>
+</apex:component>

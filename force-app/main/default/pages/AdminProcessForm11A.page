@@ -59,8 +59,12 @@ tr.urgency-red td { background-color:#f8d7da; }
 <div style="margin-top:20px;">
     <h5>Direct Debit Default Notices due (Form 11A)</h5>
     <p style="font-size:13px;margin-bottom:6px;">
-        First direct debit failures recorded from Ezidebit. The notice must be given within 14 days of the debit date (NCC s87).
-        Oldest first.
+        The first time a customer's direct debit fails, the law (NCC s87) says we must send them the Direct Debit Default Notice
+        <b>within 14 days of the debit date</b>. It applies even if they pay afterwards, and weekends count.
+        <b>Our rule: send it the day it appears here, and no later than day 2.</b>
+        The "Due by" column is the legal last day. Rows turn amber from day 7 and red from day 10.
+        If one is already past the 14 days, send it straight away and tell Compliance (Lily).
+        Anything sent from the Dishonours list ("Fees &amp; Letter") is recorded here automatically, and nothing is sent twice. Oldest first.
     </p>
     <div class="legend" style="margin-bottom:10px;">
         <span style="background:#fff3cd;">Day 7-9 since the debit</span>

@@ -246,6 +246,9 @@
         <!-- Messages -->
         <apex:pageMessages id="messages" />
 
+        <!-- Direct Debit Default Notice (Form 11A) deadlines -->
+        <c:Form11ADueAlert />
+
         <!-- Tabs -->
         <ul class="nav nav-tabs">
             <li class="{!IF(currentTab == 'dishonours', 'active', '')}">
@@ -303,6 +306,11 @@
             <apex:outputPanel id="dishonoursTablePanel">
             <div class="table-container">
                 <h3>Credit Contract Dishonours ({!dishonoursWrappers.size})</h3>
+                <p style="font-size:13px;margin:4px 0 10px 0;">
+                    <b>Action:</b> "Fees &amp; Letter" charges the $16.50 dishonour fee, sends the SMS and sends the
+                    <b>Direct Debit Default Notice (Form 11A)</b>, which is due within 14 days of the failed debit.
+                    "Fees" means the notice has already gone, so only the fee and SMS are sent. "CA" means a default letter has already gone.
+                </p>
 
                 <table class="custom-table">
                     <thead>
