@@ -1,0 +1,525 @@
+<apex:page controller="CAPAutomatorController" sidebar="false" showHeader="false" standardStylesheets="false" action="{!initializePage}">
+
+    <!-- Bootstrap CSS -->
+    <apex:stylesheet value="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css" />
+
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f5f5;
+            padding: 20px;
+        }
+
+        .page-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .page-header h1 {
+            margin: 0;
+            font-size: 28px;
+            font-weight: 600;
+        }
+
+        .status-card {
+            background: white;
+            padding: 25px;
+            border-radius: 8px;
+            margin-bottom: 25px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .status-card h3 {
+            color: #333;
+            margin-top: 0;
+            margin-bottom: 20px;
+            font-size: 20px;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        .status-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .status-row:last-child {
+            border-bottom: none;
+        }
+
+        .status-label {
+            font-weight: 600;
+            color: #555;
+        }
+
+        .status-value {
+            color: #333;
+        }
+
+        .btn-custom {
+            padding: 10px 20px;
+            margin: 5px;
+            border-radius: 5px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary-custom {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            color: white;
+        }
+
+        .btn-primary-custom:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-success-custom {
+            background-color: #28a745;
+            border: none;
+            color: white;
+        }
+
+        .btn-warning-custom {
+            background-color: #ffc107;
+            border: none;
+            color: #333;
+        }
+
+        .btn-info-custom {
+            background-color: #17a2b8;
+            border: none;
+            color: white;
+        }
+
+        .table-container {
+            background: white;
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            overflow-x: auto;
+        }
+
+        .table-container h3 {
+            color: #333;
+            margin-top: 0;
+            margin-bottom: 20px;
+            font-size: 20px;
+        }
+
+        .custom-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+        }
+
+        .custom-table thead {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .custom-table thead th {
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+            border: none;
+        }
+
+        .custom-table tbody tr {
+            border-bottom: 1px solid #eee;
+            transition: background-color 0.2s ease;
+        }
+
+        .custom-table tbody tr:hover {
+            background-color: #f8f9fa;
+        }
+
+        .custom-table tbody td {
+            padding: 12px 15px;
+            color: #333;
+        }
+
+        .status-success {
+            color: #28a745;
+            font-weight: bold;
+        }
+
+        .status-failed {
+            color: #dc3545;
+            font-weight: bold;
+        }
+
+        .status-processing {
+            color: #ff9800;
+            font-weight: bold;
+        }
+
+        .opp-link {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .opp-link:hover {
+            text-decoration: underline;
+        }
+
+        .button-group {
+            margin-bottom: 20px;
+        }
+
+        .checkbox-center {
+            text-align: center;
+        }
+
+        .text-right {
+            text-align: right;
+        }
+
+        .nav-tabs {
+            border-bottom: 2px solid #667eea;
+            margin-bottom: 25px;
+        }
+
+        .nav-tabs > li > a {
+            color: #667eea;
+            font-weight: 500;
+        }
+
+        .nav-tabs > li.active > a {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white !important;
+            border: none;
+        }
+
+        .badge-custom {
+            background-color: #667eea;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 12px;
+            margin-left: 8px;
+        }
+
+        .nav-sub-tabs {
+            border-bottom: 2px solid #28a745;
+            margin-bottom: 15px;
+        }
+
+        .nav-sub-tabs > li > a {
+            color: #28a745;
+            font-weight: 500;
+        }
+
+        .nav-sub-tabs > li.active > a {
+            background-color: #28a745;
+            color: white !important;
+            border: none;
+            border-radius: 4px 4px 0 0;
+        }
+
+        .badge-sub {
+            background-color: #28a745;
+            color: white;
+            padding: 3px 8px;
+            border-radius: 10px;
+            margin-left: 5px;
+            font-size: 12px;
+        }
+    </style>
+
+    <title>CAP Automator</title>
+
+    <apex:form id="mainForm">
+
+        <!-- Page Header -->
+        <div class="page-header">
+            <h1>CAP Automator - Dishonours &amp; Arrears Letters</h1>
+        </div>
+
+        <!-- Messages -->
+        <apex:pageMessages id="messages" />
+
+        <!-- Tabs -->
+        <ul class="nav nav-tabs">
+            <li class="{!IF(currentTab == 'dishonours', 'active', '')}">
+                <apex:commandLink value="Dishonours" action="{!getCreditContractDishonours}" reRender="mainForm">
+                    <apex:param name="currentTab" value="dishonours" assignTo="{!currentTab}" />
+                    <span class="badge-custom">{!totalDishonours}</span>
+                </apex:commandLink>
+            </li>
+            <li class="{!IF(currentTab == 'arrearsLetters', 'active', '')}">
+                <apex:commandLink value="Arrears Letters" action="{!getArrearsLettersAgreements}" reRender="mainForm">
+                    <apex:param name="currentTab" value="arrearsLetters" assignTo="{!currentTab}" />
+                    <span class="badge-custom">{!totalArrearsLetters}</span>
+                </apex:commandLink>
+            </li>
+        </ul>
+
+        <!-- Dishonours Tab Content -->
+        <apex:outputPanel rendered="{!currentTab == 'dishonours'}">
+
+            <!-- Batch Job Status for Dishonours -->
+            <apex:outputPanel rendered="{!NOT(ISBLANK(dishonoursBatchJobId))}">
+                <div class="status-card">
+                    <h3>Dishonours Processing Status</h3>
+
+                    <div class="status-row">
+                        <span class="status-label">Job ID:</span>
+                        <span class="status-value">{!dishonoursBatchJobId}</span>
+                    </div>
+
+                    <div class="status-row">
+                        <span class="status-label">Status:</span>
+                        <span class="status-value" style="font-weight: bold;">{!dishonoursBatchStatus}</span>
+                    </div>
+
+                    <div class="status-row">
+                        <span class="status-label">Total Processed:</span>
+                        <span class="status-value">{!dishonoursProcessed}</span>
+                    </div>
+
+                    <div style="margin-top: 15px; text-align: center;">
+                        <apex:commandButton value="Refresh Status" action="{!refreshDishonoursBatchStatus}" reRender="mainForm" styleClass="btn btn-custom btn-info-custom" />
+                    </div>
+                </div>
+            </apex:outputPanel>
+
+            <!-- Control Buttons for Dishonours -->
+            <div class="button-group">
+                <apex:commandButton value="Select All" action="{!selectAllDishonours}" reRender="dishonoursTablePanel" disabled="{!isDishonoursBatchRunning}" styleClass="btn btn-custom btn-success-custom" />
+                <apex:commandButton value="Deselect All" action="{!deselectAllDishonours}" reRender="dishonoursTablePanel" disabled="{!isDishonoursBatchRunning}" styleClass="btn btn-custom btn-warning-custom" />
+                <apex:commandButton value="Start Processing" action="{!startDishonoursBatchProcessing}" reRender="mainForm" disabled="{!isDishonoursBatchRunning}" styleClass="btn btn-custom btn-primary-custom" />
+                <apex:commandButton value="Refresh List" action="{!getCreditContractDishonours}" reRender="mainForm" styleClass="btn btn-custom btn-info-custom" />
+            </div>
+
+            <!-- Dishonours Table -->
+            <apex:outputPanel id="dishonoursTablePanel">
+            <div class="table-container">
+                <h3>Credit Contract Dishonours ({!dishonoursWrappers.size})</h3>
+
+                <table class="custom-table">
+                    <thead>
+                        <tr>
+                            <th class="checkbox-center">Select</th>
+                            <th>Opportunity Name</th>
+                            <th>Account Name</th>
+                            <th>Contract No</th>
+                            <th>Remaining Amount</th>
+                            <th>Days Since Payment</th>
+                            <th>Action</th>
+                            <th>Status</th>
+                            <th>Company Name</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <apex:repeat value="{!dishonoursWrappers}" var="wrapper">
+                            <tr>
+                                <td class="checkbox-center">
+                                    <apex:inputCheckbox value="{!wrapper.isSelected}" disabled="{!isDishonoursBatchRunning}" />
+                                </td>
+                                <td>
+                                    <apex:outputLink value="/{!wrapper.opp.Id}" target="_blank" styleClass="opp-link">
+                                        {!wrapper.opp.Name}
+                                    </apex:outputLink>
+                                </td>
+                                <td>
+                                    <apex:outputLink value="/{!wrapper.opp.Account.Id}" target="_blank" styleClass="opp-link">
+                                        {!wrapper.opp.Account.Name}
+                                    </apex:outputLink>
+                                </td>
+                                <td>{!wrapper.opp.Contract_No__c}</td>
+                                <td class="text-right">
+                                    <apex:outputText value="${0, number, ###,##0.00}">
+                                        <apex:param value="{!wrapper.opp.Remaining_Amount__c}" />
+                                    </apex:outputText>
+                                </td>
+                                <td>{!wrapper.opp.Days_Since_Expected_Payment__c}</td>
+                                <td>
+                                    <apex:selectList value="{!wrapper.actionType}" size="1" disabled="{!isDishonoursBatchRunning}">
+                                        <apex:selectOptions value="{!wrapper.actionOptions}" />
+                                    </apex:selectList>
+                                </td>
+                                <td>
+                                    <span class="{!IF(wrapper.processingStatus == 'Fees Charged' || wrapper.processingStatus == 'Letter Sent', 'status-success',
+                                                   IF(wrapper.processingStatus == 'Ignored', 'status-processing', ''))}">
+                                        {!wrapper.processingStatus}
+                                    </span>
+                                </td>
+                                <td>{!wrapper.opp.Account.Territory_Company_Name__c}</td>
+                            </tr>
+                        </apex:repeat>
+                    </tbody>
+                </table>
+            </div>
+            </apex:outputPanel>
+
+            <!-- Auto-refresh for dishonours -->
+            <apex:outputPanel rendered="{!isDishonoursBatchRunning}">
+                <script>
+                    setTimeout(function() {
+                        refreshDishonoursBatchStatusAction();
+                    }, 5000);
+                </script>
+            </apex:outputPanel>
+
+            <apex:actionFunction name="refreshDishonoursBatchStatusAction" action="{!refreshDishonoursBatchStatus}" reRender="mainForm" />
+
+        </apex:outputPanel>
+
+        <!-- Arrears Letters Tab Content -->
+        <apex:outputPanel rendered="{!currentTab == 'arrearsLetters'}" id="arrearsContent">
+
+            <!-- Batch Job Status for Arrears Letters -->
+            <apex:outputPanel rendered="{!NOT(ISBLANK(arrearsLettersBatchJobId))}">
+                <div class="status-card">
+                    <h3>Arrears Letters Batch Job Status</h3>
+
+                    <div class="status-row">
+                        <span class="status-label">Job ID:</span>
+                        <span class="status-value">{!arrearsLettersBatchJobId}</span>
+                    </div>
+
+                    <div class="status-row">
+                        <span class="status-label">Status:</span>
+                        <span class="status-value" style="font-weight: bold;">{!arrearsLettersBatchStatus}</span>
+                    </div>
+
+                    <div class="status-row">
+                        <span class="status-label">Total Processed:</span>
+                        <span class="status-value">{!arrearsLettersProcessed}</span>
+                    </div>
+
+                    <div style="margin-top: 15px; text-align: center;">
+                        <apex:commandButton value="Refresh Status" action="{!refreshArrearsLettersBatchStatus}" reRender="mainForm" styleClass="btn btn-custom btn-info-custom" />
+                    </div>
+                </div>
+            </apex:outputPanel>
+
+            <!-- Sub-tabs for letter types -->
+            <ul class="nav nav-tabs nav-sub-tabs">
+                <li class="{!IF(currentArrearsSubTab == 'MP1', 'active', '')}">
+                    <apex:commandLink value="DD Default Notice" action="{!switchArrearsSubTab}" reRender="arrearsContent">
+                        <apex:param name="sub" value="MP1" assignTo="{!currentArrearsSubTab}" />
+                        <span class="badge-sub">{!countMP1}</span>
+                    </apex:commandLink>
+                </li>
+                <li class="{!IF(currentArrearsSubTab == 'S6Q1', 'active', '')}">
+                    <apex:commandLink value="S6Q(1)" action="{!switchArrearsSubTab}" reRender="arrearsContent">
+                        <apex:param name="sub" value="S6Q1" assignTo="{!currentArrearsSubTab}" />
+                        <span class="badge-sub">{!countS6Q1}</span>
+                    </apex:commandLink>
+                </li>
+                <li class="{!IF(currentArrearsSubTab == 'S6Q2', 'active', '')}">
+                    <apex:commandLink value="S6Q(2)" action="{!switchArrearsSubTab}" reRender="arrearsContent">
+                        <apex:param name="sub" value="S6Q2" assignTo="{!currentArrearsSubTab}" />
+                        <span class="badge-sub">{!countS6Q2}</span>
+                    </apex:commandLink>
+                </li>
+                <li class="{!IF(currentArrearsSubTab == '21D', 'active', '')}">
+                    <apex:commandLink value="21D" action="{!switchArrearsSubTab}" reRender="arrearsContent">
+                        <apex:param name="sub" value="21D" assignTo="{!currentArrearsSubTab}" />
+                        <span class="badge-sub">{!count21D}</span>
+                    </apex:commandLink>
+                </li>
+                <li class="{!IF(currentArrearsSubTab == 'Default', 'active', '')}">
+                    <apex:commandLink value="Default" action="{!switchArrearsSubTab}" reRender="arrearsContent">
+                        <apex:param name="sub" value="Default" assignTo="{!currentArrearsSubTab}" />
+                        <span class="badge-sub">{!countDefault}</span>
+                    </apex:commandLink>
+                </li>
+            </ul>
+
+            <!-- Control Buttons for Arrears Letters -->
+            <div class="button-group">
+                <apex:commandButton value="Select All" action="{!selectAllArrearsLetters}" reRender="arrearsContent" disabled="{!isArrearsLettersBatchRunning}" styleClass="btn btn-custom btn-success-custom" />
+                <apex:commandButton value="Deselect All" action="{!deselectAllArrearsLetters}" reRender="arrearsContent" disabled="{!isArrearsLettersBatchRunning}" styleClass="btn btn-custom btn-warning-custom" />
+                <apex:commandButton value="Start Batch Processing" action="{!startArrearsLettersBatchProcessing}" reRender="mainForm" disabled="{!isArrearsLettersBatchRunning}" styleClass="btn btn-custom btn-primary-custom" />
+                <apex:commandButton value="Refresh List" action="{!getArrearsLettersAgreements}" reRender="mainForm" styleClass="btn btn-custom btn-info-custom" />
+            </div>
+
+            <!-- Arrears Letters Table -->
+            <div class="table-container">
+                <h3>{!currentSubTabLabel} ({!currentSubTabCount})</h3>
+
+                <table class="custom-table">
+                    <thead>
+                        <tr>
+                            <th class="checkbox-center">Select</th>
+                            <th>Opportunity Name</th>
+                            <th>Account Name</th>
+                            <th>Contract No</th>
+                            <th>Remaining Amount</th>
+                            <th>Next Letter Type</th>
+                            <th>Days Since Expected Payment</th>
+                            <th>Action</th>
+                            <th>Status</th>
+                            <th>Company Name</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <apex:repeat value="{!arrearsLettersWrappers}" var="wrapper">
+                            <apex:outputPanel layout="none" rendered="{!wrapper.letterTypeKey == currentArrearsSubTab}">
+                                <tr>
+                                    <td class="checkbox-center">
+                                        <apex:inputCheckbox value="{!wrapper.isSelected}" disabled="{!isArrearsLettersBatchRunning}" />
+                                    </td>
+                                    <td>
+                                        <apex:outputLink value="/{!wrapper.opp.Id}" target="_blank" styleClass="opp-link">
+                                            {!wrapper.opp.Name}
+                                        </apex:outputLink>
+                                    </td>
+                                    <td>
+                                        <apex:outputLink value="/{!wrapper.opp.Account.Id}" target="_blank" styleClass="opp-link">
+                                            {!wrapper.opp.Account.Name}
+                                        </apex:outputLink>
+                                    </td>
+                                    <td>{!wrapper.opp.Contract_No__c}</td>
+                                    <td class="text-right">
+                                        <apex:outputText value="${0, number, ###,##0.00}">
+                                            <apex:param value="{!wrapper.opp.Remaining_Amount__c}" />
+                                        </apex:outputText>
+                                    </td>
+                                    <td>{!wrapper.opp.Next_Arrears_Letter_to_be_Sent__c}</td>
+                                    <td>{!wrapper.opp.Days_Since_Expected_Payment__c}</td>
+                                    <td>
+                                        <apex:selectList value="{!wrapper.actionType}" size="1" disabled="{!isArrearsLettersBatchRunning}">
+                                            <apex:selectOptions value="{!wrapper.actionOptions}" />
+                                        </apex:selectList>
+                                    </td>
+                                    <td>
+                                        <span class="{!IF(wrapper.processingStatus == 'Letter Sent', 'status-success',
+                                                       IF(wrapper.processingStatus == 'Ignored', 'status-processing', ''))}">
+                                            {!wrapper.processingStatus}
+                                        </span>
+                                    </td>
+                                    <td>{!wrapper.opp.Account.Territory_Company_Name__c}</td>
+                                </tr>
+                            </apex:outputPanel>
+                        </apex:repeat>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Auto-refresh for arrears letters -->
+            <apex:outputPanel rendered="{!isArrearsLettersBatchRunning}">
+                <script>
+                    setTimeout(function() {
+                        refreshArrearsLettersBatchStatusAction();
+                    }, 5000);
+                </script>
+            </apex:outputPanel>
+
+            <apex:actionFunction name="refreshArrearsLettersBatchStatusAction" action="{!refreshArrearsLettersBatchStatus}" reRender="mainForm" />
+
+        </apex:outputPanel>
+
+    </apex:form>
+
+</apex:page>
