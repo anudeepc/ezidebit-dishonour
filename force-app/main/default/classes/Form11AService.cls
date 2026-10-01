@@ -41,7 +41,7 @@ public without sharing class Form11AService {
         List<Ezidebit_Dishonour__c> rows = [
             SELECT Id, Name, Opportunity__c, Form_11A_Sent_Date__c, First_Default__c, Is_Backfill__c,
                    Opportunity__r.Name, Opportunity__r.Contract_No__c, Opportunity__r.MP1__c, Opportunity__r.Is_Credit_Contract__c,
-                   Opportunity__r.Account.FirstName, Opportunity__r.Account.PersonEmail, Opportunity__r.Account.Enquiry_Status__c,
+                   Opportunity__r.Is_Active__c, Opportunity__r.Account.State_Master_State__c, Opportunity__r.Account.FirstName, Opportunity__r.Account.PersonEmail, Opportunity__r.Account.Enquiry_Status__c,
                    Opportunity__r.Account.Territory_Number__r.Collection_Number__c, Opportunity__r.Account.Territory_Number__r.Short_Name__c
             FROM Ezidebit_Dishonour__c
             WHERE Id IN :dishonourIds
@@ -136,6 +136,12 @@ public without sharing class Form11AService {
         }
         if (!opp.Is_Credit_Contract__c) {
             return 'not a credit contract';
+        }
+        if (opp.Account != null && opp.Account.State_Master_State__c == 'NZ') {
+            return 'New Zealand agreement: the Australian notice does not apply';
+        }
+        if (opp.Is_Active__c == false) {
+            return 'agreement is no longer active';
         }
         if (!d.First_Default__c) {
             return 'not the first default';

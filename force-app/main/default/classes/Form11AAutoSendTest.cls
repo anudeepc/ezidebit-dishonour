@@ -11,7 +11,7 @@ private class Form11AAutoSendTest {
             WHERE Is_Credit_Contract__c = true AND Is_Active__c = true AND Contract_No__c != null AND MP1__c = null
               AND Account.Territory_Number__r.Status__c = 'Active' AND Account.Territory_Number__r.Is_Credit_Contract__c = true
               AND Account.Enquiry_Status__c NOT IN ('Deceased', 'Incarcerated')
-              AND Account.PersonEmail != null
+              AND Account.PersonEmail != null AND Account.State_Master_State__c != 'NZ'
             LIMIT 1
         ];
         if (opps.isEmpty()) {

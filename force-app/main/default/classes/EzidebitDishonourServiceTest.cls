@@ -18,7 +18,8 @@ private class EzidebitDishonourServiceTest {
     private static Opportunity anyCreditContract() {
         List<Opportunity> opps = [
             SELECT Id, AccountId, Contract_No__c, MP1__c FROM Opportunity
-            WHERE Is_Credit_Contract__c = true AND Contract_No__c != null AND MP1__c = null LIMIT 1
+            WHERE Is_Credit_Contract__c = true AND Contract_No__c != null AND MP1__c = null
+              AND Id NOT IN (SELECT Opportunity__c FROM Ezidebit_Dishonour__c WHERE Opportunity__c != null) LIMIT 1
         ];
         return opps.isEmpty() ? null : opps[0];
     }
@@ -99,6 +100,44 @@ private class EzidebitDishonourServiceTest {
             System.assertEquals(d1.addDays(14), d.get('T-INST').Form_11A_Due_Date__c);
             System.assertEquals(false, d.get('T-NEXT').First_Default__c);
         }
+    }
+
+    @isTest
+    static void firstDefault_isTheEarliestFailureIncludingHistory() {
+        Opportunity opp = anyCreditContract();
+        if (opp == null) {
+            return;
+        }
+        Date old = Date.today().addDays(-60);
+        EzidebitDishonourService.CaptureOptions history = new EzidebitDishonourService.CaptureOptions();
+        history.backfill = true;
+        EzidebitDishonourService.capture(new List<EzidebitAPI.Payment>{ pay('T-HIST', 'D', opp.Contract_No__c, old, 41.10, 2.75, 'SCHEDULED') }, null, history);
+        Test.startTest();
+        EzidebitDishonourService.Result live = EzidebitDishonourService.capture(
+            new List<EzidebitAPI.Payment>{ pay('T-LIVE', 'D', opp.Contract_No__c, Date.today().addDays(-3), 41.10, 2.75, 'SCHEDULED') }, null);
+        Test.stopTest();
+        Map<String, Ezidebit_Dishonour__c> d = byPaymentId(new Set<String>{ 'T-HIST', 'T-LIVE' });
+        System.assertEquals(false, d.get('T-LIVE').First_Default__c, 'an earlier failure in the history means this is not the first default');
+        System.assert(d.get('T-HIST').First_Default__c, 'the first default is the earliest failure');
+        System.assertEquals(old.addDays(14), d.get('T-HIST').Form_11A_Due_Date__c);
+        System.assertEquals(1, live.inserted);
+    }
+
+    @isTest
+    static void firstDefault_recentHistoryFailureIsListedLive() {
+        Opportunity opp = anyCreditContract();
+        if (opp == null) {
+            return;
+        }
+        EzidebitDishonourService.CaptureOptions history = new EzidebitDishonourService.CaptureOptions();
+        history.backfill = true;
+        EzidebitDishonourService.capture(new List<EzidebitAPI.Payment>{ pay('T-HREC', 'D', opp.Contract_No__c, Date.today().addDays(-5), 41.10, 2.75, 'SCHEDULED') }, null, history);
+        Test.startTest();
+        EzidebitDishonourService.settleFirstDefaults(new Set<Id>{ opp.Id });
+        Test.stopTest();
+        Ezidebit_Dishonour__c d = [SELECT First_Default__c, Is_Backfill__c FROM Ezidebit_Dishonour__c WHERE Ezidebit_Payment_ID__c = 'T-HREC'];
+        System.assert(d.First_Default__c, 'still inside 14 days: the notice is due');
+        System.assertEquals(false, d.Is_Backfill__c, 'so it is listed on the Form 11A page');
     }
 
     @isTest

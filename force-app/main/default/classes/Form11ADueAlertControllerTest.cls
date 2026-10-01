@@ -7,7 +7,8 @@ private class Form11ADueAlertControllerTest {
         Form11ADueAlertController before = new Form11ADueAlertController();
         List<Opportunity> opps = [
             SELECT Id, AccountId, Contract_No__c FROM Opportunity
-            WHERE Is_Credit_Contract__c = true AND Is_Active__c = true AND Contract_No__c != null LIMIT 3
+            WHERE Is_Credit_Contract__c = true AND Is_Active__c = true AND Contract_No__c != null
+              AND MP1__c = null AND Account.State_Master_State__c != 'NZ' LIMIT 3
         ];
         if (opps.size() < 3) {
             return;

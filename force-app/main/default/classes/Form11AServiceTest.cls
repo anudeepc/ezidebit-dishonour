@@ -8,7 +8,8 @@ private class Form11AServiceTest {
     private static Opportunity dueAgreement() {
         List<Opportunity> opps = [
             SELECT Id, AccountId, Contract_No__c FROM Opportunity
-            WHERE Is_Credit_Contract__c = true AND Contract_No__c != null AND MP1__c = null
+            WHERE Is_Credit_Contract__c = true AND Is_Active__c = true AND Contract_No__c != null AND MP1__c = null
+              AND Account.State_Master_State__c != 'NZ'
               AND Account.Territory_Number__r.Status__c = 'Active' AND Account.Territory_Number__r.Is_Credit_Contract__c = true
               AND Account.Enquiry_Status__c NOT IN ('Deceased', 'Incarcerated')
             LIMIT 1
@@ -50,7 +51,7 @@ private class Form11AServiceTest {
 
     @isTest
     static void blockReason_coversEachException() {
-        Opportunity cc = new Opportunity(Is_Credit_Contract__c = true);
+        Opportunity cc = new Opportunity(Is_Credit_Contract__c = true, Is_Active__c = true);
         Ezidebit_Dishonour__c ok = new Ezidebit_Dishonour__c(First_Default__c = true);
         ok.Opportunity__r = cc;
         System.assertEquals(null, Form11AService.blockReason(ok));
@@ -74,7 +75,17 @@ private class Form11AServiceTest {
         sent.Opportunity__r = cc;
         System.assert(Form11AService.blockReason(sent).startsWith('already sent'));
 
-        Opportunity deceasedOpp = new Opportunity(Is_Credit_Contract__c = true);
+        Ezidebit_Dishonour__c nz = new Ezidebit_Dishonour__c(First_Default__c = true);
+        Opportunity nzOpp = new Opportunity(Is_Credit_Contract__c = true, Is_Active__c = true);
+        nzOpp.Account = (Account) JSON.deserialize('{"State_Master_State__c":"NZ"}', Account.class);
+        nz.Opportunity__r = nzOpp;
+        System.assert(Form11AService.blockReason(nz).startsWith('New Zealand'), 'the NCC notice is for Australian agreements');
+
+        Ezidebit_Dishonour__c closed = new Ezidebit_Dishonour__c(First_Default__c = true);
+        closed.Opportunity__r = new Opportunity(Is_Credit_Contract__c = true, Is_Active__c = false);
+        System.assertEquals('agreement is no longer active', Form11AService.blockReason(closed));
+
+        Opportunity deceasedOpp = new Opportunity(Is_Credit_Contract__c = true, Is_Active__c = true);
         deceasedOpp.Account = new Account(Enquiry_Status__c = 'Deceased');
         Ezidebit_Dishonour__c deceased = new Ezidebit_Dishonour__c(First_Default__c = true);
         deceased.Opportunity__r = deceasedOpp;

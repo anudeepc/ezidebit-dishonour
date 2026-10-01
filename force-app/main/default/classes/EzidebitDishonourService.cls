@@ -59,6 +59,7 @@ public without sharing class EzidebitDishonourService {
         public Integer skippedInactive = 0;
         public Integer relinked = 0;             // retries recorded before their original, now linked
         public Set<Id> newlyRecordedOpportunityIds = new Set<Id>();
+        public Integer firstDefaultsMoved = 0;   // first-default flags moved to an earlier failure
     }
 
     public static Ezidebit_Sync_Settings__c settings() {
@@ -247,7 +248,59 @@ public without sharing class EzidebitDishonourService {
             }
         }
         res.relinked = relinkLaterRetries(newInstalments);
+        res.firstDefaultsMoved = settleFirstDefaults(res.newlyRecordedOpportunityIds);
         return res;
+    }
+
+    /**
+     * NCC s87 requires one notice: for the first default on the agreement. That is the earliest missed
+     * scheduled debit (instalment, fatal or late return; never a retry), counting failures loaded from
+     * history. For agreements with no notice yet (MP1__c blank, nothing sent), puts the first-default
+     * flag on that failure only. A history record still inside its 14 days is made live so it is listed;
+     * an older one stays history, so it shows as missed on the agreement but not on the lists.
+     */
+    public static Integer settleFirstDefaults(Set<Id> oppIds) {
+        if (oppIds == null || oppIds.isEmpty()) {
+            return 0;
+        }
+        Map<Id, List<Ezidebit_Dishonour__c>> byOpp = new Map<Id, List<Ezidebit_Dishonour__c>>();
+        for (Ezidebit_Dishonour__c d : [
+            SELECT Id, Opportunity__c, Debit_Date__c, First_Default__c, Is_Backfill__c, Form_11A_Sent_Date__c
+            FROM Ezidebit_Dishonour__c
+            WHERE Opportunity__c IN :oppIds AND Opportunity__r.MP1__c = null AND Opportunity__r.Is_Credit_Contract__c = true
+              AND Type__c IN :DEFAULT_TYPES AND Is_Scheduled_Debit__c = true AND Original_Dishonour__c = null
+              AND Debit_Date__c != null
+            ORDER BY Debit_Date__c ASC, Name ASC
+        ]) {
+            if (!byOpp.containsKey(d.Opportunity__c)) {
+                byOpp.put(d.Opportunity__c, new List<Ezidebit_Dishonour__c>());
+            }
+            byOpp.get(d.Opportunity__c).add(d);
+        }
+        Date today = Date.today();
+        List<Ezidebit_Dishonour__c> updates = new List<Ezidebit_Dishonour__c>();
+        for (List<Ezidebit_Dishonour__c> ds : byOpp.values()) {
+            Boolean noticeGiven = false;
+            for (Ezidebit_Dishonour__c d : ds) {
+                noticeGiven = noticeGiven || d.Form_11A_Sent_Date__c != null;
+            }
+            if (noticeGiven) {
+                continue;
+            }
+            for (Integer i = 0; i < ds.size(); i++) {
+                Ezidebit_Dishonour__c d = ds[i];
+                Boolean first = i == 0;
+                Boolean makeLive = first && d.Is_Backfill__c && d.Debit_Date__c.addDays(14) >= today;
+                if (d.First_Default__c != first || makeLive) {
+                    Ezidebit_Dishonour__c u = new Ezidebit_Dishonour__c(Id = d.Id, First_Default__c = first);
+                    if (makeLive) {
+                        u.Is_Backfill__c = false;
+                    }
+                    updates.add(u);
+                }
+            }
+        }
+        return save(updates, false);
     }
 
     /**

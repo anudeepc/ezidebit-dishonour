@@ -30,12 +30,14 @@ public without sharing class Form11AAutoSend implements Database.Batchable<SObje
         overdueAtStart = [
             SELECT COUNT() FROM Ezidebit_Dishonour__c
             WHERE First_Default__c = true AND Form_11A_Sent_Date__c = null AND Is_Backfill__c = false
-              AND Opportunity__r.Is_Active__c = true AND Form_11A_Due_Date__c < TODAY
+              AND Opportunity__r.Is_Active__c = true AND Opportunity__r.Is_Credit_Contract__c = true
+              AND Opportunity__r.MP1__c = null AND Opportunity__r.Account.State_Master_State__c != 'NZ' AND Form_11A_Due_Date__c < TODAY
         ];
         return Database.getQueryLocator([
             SELECT Id FROM Ezidebit_Dishonour__c
             WHERE First_Default__c = true AND Form_11A_Sent_Date__c = null AND Is_Backfill__c = false
               AND Opportunity__r.Is_Active__c = true AND Opportunity__r.Is_Credit_Contract__c = true
+              AND Opportunity__r.Account.State_Master_State__c != 'NZ'
             ORDER BY Debit_Date__c ASC
             LIMIT :rowLimit
         ]);
@@ -62,7 +64,8 @@ public without sharing class Form11AAutoSend implements Database.Batchable<SObje
         Integer stillOverdue = [
             SELECT COUNT() FROM Ezidebit_Dishonour__c
             WHERE First_Default__c = true AND Form_11A_Sent_Date__c = null AND Is_Backfill__c = false
-              AND Opportunity__r.Is_Active__c = true AND Form_11A_Due_Date__c < TODAY
+              AND Opportunity__r.Is_Active__c = true AND Opportunity__r.Is_Credit_Contract__c = true
+              AND Opportunity__r.MP1__c = null AND Opportunity__r.Account.State_Master_State__c != 'NZ' AND Form_11A_Due_Date__c < TODAY
         ];
         Messaging.SingleEmailMessage mail = new Messaging.SingleEmailMessage();
         mail.setToAddresses(summaryRecipients());

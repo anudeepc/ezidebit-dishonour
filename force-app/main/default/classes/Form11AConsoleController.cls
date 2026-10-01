@@ -73,11 +73,12 @@ public with sharing class Form11AConsoleController {
             SELECT Id, Name, Opportunity__c, Debit_Date__c, Form_11A_Due_Date__c, Form_11A_Sent_Date__c, First_Default__c,
                    Is_Backfill__c, Type__c, Payment_Amount__c, Bank_Failed_Reason__c, Outcome__c, Territory_Name__c,
                    Opportunity__r.Name, Opportunity__r.Contract_No__c, Opportunity__r.MP1__c, Opportunity__r.Is_Credit_Contract__c,
-                   Opportunity__r.Account.Name, Opportunity__r.Account.FirstName, Opportunity__r.Account.PersonEmail,
+                   Opportunity__r.Is_Active__c, Opportunity__r.Account.State_Master_State__c, Opportunity__r.Account.Name, Opportunity__r.Account.FirstName, Opportunity__r.Account.PersonEmail,
                    Opportunity__r.Account.Enquiry_Status__c, Opportunity__r.Account.Is_IDR__c
             FROM Ezidebit_Dishonour__c
             WHERE First_Default__c = true AND Form_11A_Sent_Date__c = null AND Is_Backfill__c = false
               AND Opportunity__r.MP1__c = null AND Opportunity__r.Account.Territory_Number__c IN :territoryIds()
+              AND Opportunity__r.Is_Active__c = true AND Opportunity__r.Account.State_Master_State__c != 'NZ'
             ORDER BY Debit_Date__c ASC, Name ASC
             LIMIT 1000
         ]) {

@@ -69,7 +69,9 @@ private class EzidebitDishonourBackfillTest {
         Test.stopTest();
         Ezidebit_Dishonour__c d = [SELECT Is_Backfill__c, First_Default__c, Type__c, Opportunity__c FROM Ezidebit_Dishonour__c WHERE Ezidebit_Payment_ID__c = 'T-HIST-1'];
         System.assert(d.Is_Backfill__c);
-        System.assertEquals(false, d.First_Default__c, 'history never raises a Form 11A');
+        // An old failure can be the agreement's first default (so a later one is not), but it stays history:
+        // its 14 days ran out long ago, so it is never listed or sent.
+        System.assertEquals(0, [SELECT COUNT() FROM Ezidebit_Dishonour__c WHERE Id = :d.Id AND Is_Backfill__c = false]);
         System.assertEquals(opp.Id, d.Opportunity__c);
         System.assertEquals(1, load.inserted);
     }
