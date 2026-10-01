@@ -14,8 +14,7 @@
 	), 
 	Amount - Total_Paid_Amount_Archived__c
 )</formula>
-    <inlineHelpText>Remaining contract balance including future interest not yet earned. Do not quote this as a payout; use Final Payout Figure (Today).</inlineHelpText>
-    <label>Remaining Balance (Incl Future Interest)</label>
+    <label>Remaining Amount</label>
     <precision>18</precision>
     <required>false</required>
     <scale>2</scale>
