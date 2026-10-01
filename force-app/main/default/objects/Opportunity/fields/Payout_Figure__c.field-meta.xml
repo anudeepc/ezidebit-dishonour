@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Payout_Figure__c</fullName>
+    <description>AU credit contracts: the loan balance (amount of credit plus fees less principal repaid). Until Sep 2026 this also added 25% of the disclosed interest not yet paid; that loading was removed.</description>
+    <formula>IF( Account.State_Master_State__c =&apos;NZ&apos; ||  !Is_Credit_Contract__c,  Remaining_Amount__c , ((Amount- Total_Interest_Amount__c ) +  Total_Additional_Fees__c) -  Total_Paid_Principal_Amount__c )</formula>
+    <formulaTreatBlanksAs>BlankAsZero</formulaTreatBlanksAs>
+    <label>Payout Figure</label>
+    <precision>18</precision>
+    <required>false</required>
+    <scale>2</scale>
+    <trackHistory>false</trackHistory>
+    <type>Currency</type>
+</CustomField>

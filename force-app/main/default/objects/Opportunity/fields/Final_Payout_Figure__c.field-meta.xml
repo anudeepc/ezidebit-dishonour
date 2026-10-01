@@ -4,7 +4,8 @@
     <formula>Total_Loan_Balance_Amount__c + Interest_Accrued_Since_Last_Payment__c + IF(AND(NOT(ISPICKVAL(CurrencyIsoCode, &quot;NZD&quot;)), OR(UPPER(Account.Territory_Number__r.Company_Name__c) = &quot;R4K SERVICES PTY LTD&quot;, UPPER(Account.Territory_Number__r.Company_Name__c) = &quot;NAASH PTY LTD&quot;)), Unpaid_Interest_Amount__c, 0)</formula>
     <formulaTreatBlanksAs>BlankAsZero</formulaTreatBlanksAs>
     <description>The amount to pay the agreement out today: account balance (principal and fees) + interest charged in earlier periods and not yet paid + interest accrued daily since the last payment. No future interest. Unpaid interest is added only for Australian agreements of R4K Services and Naash; NZ and other companies are unchanged.</description>
-    <label>Final Payout Figure</label>
+    <inlineHelpText>The amount to quote when a customer asks to pay out today: account balance + unpaid interest + interest accrued since the last payment. No future interest.</inlineHelpText>
+    <label>Final Payout Figure (Today)</label>
     <precision>18</precision>
     <required>false</required>
     <scale>2</scale>
